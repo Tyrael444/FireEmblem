@@ -1,0 +1,11 @@
+.exe
+.lib
+.pdb
+Saved/
+Intermediate/
+.vs/
+Binaries/
+.vsconfig
+.sln
+Content/__*/
+Content/StarterContent/
