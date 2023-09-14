@@ -24,5 +24,5 @@ protected:
 
 	/* Define the ability input id, used to give the ability to the ASC */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS")
-	TEnumAsByte<EFEAbilityInputID> AbilityInputID;
+	EFEAbilityInputID AbilityInputID;
 };

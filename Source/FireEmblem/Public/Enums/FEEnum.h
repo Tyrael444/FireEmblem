@@ -3,7 +3,7 @@
 #pragma once
 
 UENUM(BlueprintType)
-enum EFETeam : uint8
+enum class EFETeam : uint8
 {
 	PLAYER		UMETA(DisplayName = "Player Team"),
 	ALLY		UMETA(DisplayName = "Ally Team"),
@@ -14,7 +14,7 @@ enum EFETeam : uint8
 };
 
 UENUM(BlueprintType)
-enum EFEWeaponRank : uint8
+enum class EFEWeaponRank : uint8
 {
 	E			UMETA(Tooltip = "Lowest level possible"),
 	D,
@@ -27,7 +27,7 @@ enum EFEWeaponRank : uint8
 };
 
 UENUM(BlueprintType)
-enum EFEWeaponType : uint8
+enum class EFEWeaponType : uint8
 {
 	SWORD		UMETA(DisplayName = "Sword"),
 	LANCE		UMETA(DisplayName = "Lance"),
@@ -45,7 +45,7 @@ enum EFEWeaponType : uint8
 };
 
 UENUM(BlueprintType)
-enum EFEAbilityInputID : uint8
+enum class EFEAbilityInputID : uint8
 {
 	NONE,
 	CANCEL,
@@ -55,7 +55,7 @@ enum EFEAbilityInputID : uint8
 };
 
 UENUM(BlueprintType)
-enum EFEStatType : uint8
+enum class EFEStatType : uint8
 {
 	HEALTH			UMETA(DisplayName = "Health"),
 	STRENGTH		UMETA(DisplayName = "Strength"),
@@ -67,4 +67,25 @@ enum EFEStatType : uint8
 	RESISTANCE		UMETA(DisplayName = "Resistance"),
 
 	STATTYPE_COUNT	UMETA(Hidden)
+};
+
+UENUM(BlueprintType)
+enum class EFESupportLevel : uint8
+{
+	DEFAULT				UMETA(Tooltip = "Means that the support is unactive (doesn't provide any buffs)"),
+	C					UMETA(Tooltip = "Lowest support level. Will provide the least amount of buffs"),
+	B,
+	A,
+	S					UMETA(Tooltip = "Highest support level. Will provide the maximum amount of buffs"),
+
+	SUPPORTLEVEL_COUNT	UMETA(Hidden)
+};
+
+UENUM(BlueprintType)
+enum class EFEGridGenerationMethod : uint8
+{
+	BOUNDS						UMETA(DisplayName = "Bounds", Tooltip = "Generate the grid according to some bounds. The grid will be clamped to those bounds"),
+	CENTER						UMETA(DisplayName = "Center", Tooltip = "Take a center position to generate the grid, without taking care of any possible bounds"),
+
+	GRIDGENERATIONMETHOD_COUNT	UMETA(Hidden)
 };

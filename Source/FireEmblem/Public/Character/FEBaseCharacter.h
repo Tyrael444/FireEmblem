@@ -20,13 +20,14 @@ class UFECharacterAttributeSet;
 class UFECharacterClassComponent;	
 class UFEGrowthDataAsset;
 class UFEInventoryComponent;
+class UFESupportComponent;
 
 class FEStoryElement;				// defines the character story background, tags, etc
 class FEDialogueSystem;				// link to the dialogue system
-class FESupportSystem;				// link to the support system
 
 UCLASS(BlueprintType, meta=(Tooltip = "Base class for every character of the Fire Emblem Project."))
-class FIREEMBLEM_API AFEBaseCharacter : public APawn, public IFECombatAgent, public IGenericTeamAgentInterface, public IAbilitySystemInterface, public IFEDialogueAgent, public IFETurnAgent
+class FIREEMBLEM_API AFEBaseCharacter : public APawn, public IFECombatAgent, public IGenericTeamAgentInterface, public IAbilitySystemInterface, 
+										public IFEDialogueAgent, public IFETurnAgent
 {
 	GENERATED_BODY()
 
@@ -59,7 +60,7 @@ public:
 
 	/* Modify this character current team */
 	UFUNCTION(BlueprintCallable)
-	void ChangeCharacterTeam(TEnumAsByte<EFETeam> aNewTeam);
+	void ChangeCharacterTeam(EFETeam aNewTeam);
 
 
 protected:
@@ -88,6 +89,15 @@ protected:
 	virtual EFETeam GetAgentTeam_Implementation() const override;
 
 	virtual FFECombatData GetAgentCombatData_Implementation() const override;
+
+
+	/************
+	* Turn Agent overrides
+	************/
+
+	virtual void OnTurnStarted_Implementation() const override;
+
+	virtual void OnTurnEnded_Implementation() const override;
 
 
 	/************
@@ -165,6 +175,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UFEExperienceComponent> ExperienceComponent;
 
+	/* Character support component */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UFESupportComponent> SupportComponent;
+
 
 	/************
 	* Team
@@ -172,5 +186,5 @@ protected:
 
 	/* Defines the character current team. Could be modified at runtime */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Team")
-	TEnumAsByte<EFETeam> CharacterTeam;
+	EFETeam CharacterTeam;
 };

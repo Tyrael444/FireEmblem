@@ -60,9 +60,9 @@ protected:
 
 	/* Defines the weapon type */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon type")
-	TEnumAsByte<EFEWeaponType> Type;
+	EFEWeaponType Type;
 
 	/* Weapon rank, the higher, the higher the mastery needs to be for a character to use this weapon */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Rank")
-	TEnumAsByte<EFEWeaponRank> Rank;
+	EFEWeaponRank Rank;
 };

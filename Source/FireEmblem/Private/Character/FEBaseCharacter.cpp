@@ -30,6 +30,8 @@ AFEBaseCharacter::AFEBaseCharacter()
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
+	SupportComponent = CreateDefaultSubobject<UFESupportComponent>("Support Component");
+
 	InitComponents();
 }
 
@@ -92,12 +94,20 @@ FFECombatData AFEBaseCharacter::GetAgentCombatData_Implementation() const
 	return CombatData;
 }
 
+void AFEBaseCharacter::OnTurnStarted_Implementation() const
+{
+}
+
+void AFEBaseCharacter::OnTurnEnded_Implementation() const
+{
+}
+
 EFETeam AFEBaseCharacter::GetCharacterTeam() const
 {
 	return CharacterTeam;
 }
 
-void AFEBaseCharacter::ChangeCharacterTeam(TEnumAsByte<EFETeam> aNewTeam)
+void AFEBaseCharacter::ChangeCharacterTeam(EFETeam aNewTeam)
 {
 	CharacterTeam = aNewTeam;
 

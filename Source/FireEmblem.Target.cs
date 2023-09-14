@@ -10,6 +10,9 @@ public class FireEmblemTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
-		ExtraModuleNames.Add("FireEmblem");
-	}
+		ExtraModuleNames.AddRange(new string[]
+		{
+			"FireEmblem"
+		});
+    }
 }

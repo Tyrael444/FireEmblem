@@ -13,5 +13,4 @@ UCLASS()
 class FIREEMBLEM_API UFEObjectiveManager : public UObject
 {
 	GENERATED_BODY()
-	
 };

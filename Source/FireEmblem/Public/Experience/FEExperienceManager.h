@@ -19,7 +19,7 @@ public:
 
 	/* Rank of the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TEnumAsByte<EFEWeaponRank> WeaponRank;
+	EFEWeaponRank WeaponRank;
 
 	/* Defines the experience required to master the given rank */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (ClampMin = "0"))

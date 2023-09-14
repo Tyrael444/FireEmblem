@@ -102,7 +102,7 @@ void UFEExperienceComponent::CombatLevelUp()
 void UFEExperienceComponent::WeaponMasteryLevelUp(const EFEWeaponType aWeaponType)
 {
 	// probably need to find a better way to increament it, will see later
-	WeaponMastery[aWeaponType].Rank = static_cast<EFEWeaponRank>(WeaponMastery[aWeaponType].Rank.GetIntValue() + 1);
+	WeaponMastery[aWeaponType].Rank = static_cast<EFEWeaponRank>((int)WeaponMastery[aWeaponType].Rank + 1);
 
 	OnWeaponMasteryLevelUp.Broadcast(aWeaponType, WeaponMastery[aWeaponType].Rank);
 }

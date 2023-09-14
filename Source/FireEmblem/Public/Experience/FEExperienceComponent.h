@@ -35,7 +35,7 @@ public:
 
 	/* Defines the weapon rank for this mastery */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Experience")
-	TEnumAsByte<EFEWeaponRank> Rank = EFEWeaponRank::RANK_COUNT;
+	EFEWeaponRank Rank = EFEWeaponRank::RANK_COUNT;
 
 	/* Defines the current experience for this mastery */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Experience")
@@ -121,5 +121,5 @@ protected:
 
 	/* Component current weapon mastery for each weapon type */
 	UPROPERTY(VisibleAnywhere, BLueprintReadOnly, Category = "Weapon Mastery")
-	TMap<TEnumAsByte<EFEWeaponType>, FFEWeaponMastery> WeaponMastery;
+	TMap<EFEWeaponType, FFEWeaponMastery> WeaponMastery;
 };

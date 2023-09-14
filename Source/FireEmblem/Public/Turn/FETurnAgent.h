@@ -19,4 +19,18 @@ class UFETurnAgent : public UInterface
 class FIREEMBLEM_API IFETurnAgent
 {
 	GENERATED_BODY()
+
+public:
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Turn Agent")
+	void OnTurnStarted() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Turn Agent")
+	void OnTurnEnded() const;
+
+protected:
+
+	virtual void OnTurnStarted_Implementation() const;
+
+	virtual void OnTurnEnded_Implementation() const;
 };

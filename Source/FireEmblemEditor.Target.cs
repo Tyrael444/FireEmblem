@@ -10,6 +10,10 @@ public class FireEmblemEditorTarget : TargetRules
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
-		ExtraModuleNames.Add("FireEmblem");
+		ExtraModuleNames.AddRange(new string[]
+		{
+			"FireEmblem",
+			"FireEmblemEditor"
+		});
 	}
 }

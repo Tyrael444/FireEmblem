@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DataAsset.h"
-#include "FEObjectiveDataAsset.generated.h"
+#include "UObject/NoExportTypes.h"
+#include "FESupportManager.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FIREEMBLEM_API UFEObjectiveDataAsset : public UPrimaryDataAsset
+class FIREEMBLEM_API UFESupportManager : public UObject
 {
 	GENERATED_BODY()
 };
