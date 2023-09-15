@@ -32,6 +32,10 @@ public:
 
 protected:
 
+	/* This will setup basic data, like the bottom left position, etc; before actualling creating the grid */
+	UFUNCTION()
+	void SetupGrid();
+
 	/* Create all the tiles needed for this grid.
 	* This will only create tiles that are within the gridboundsvolume.
 	*/
@@ -40,7 +44,7 @@ protected:
 
 	/* Clear the tiles array */
 	UFUNCTION()
-	void ClearTiles();
+	void ClearTiles(bool bShouldReinit = true);
 
 	/* Calculate all the tiles positions (calculate exact world location, defines if walkable, etc).
 	* Make sure to call CalculateTilesConnections() afterwards to properly update the tiles connections
@@ -67,6 +71,16 @@ protected:
 	*/
 	UFUNCTION()
 	bool PerformSanityCheck();
+
+	/* Test if a connection is possible between the two tiles */
+	UFUNCTION()
+	bool IsConnectionValid(const FGridTile& aTile, const FGridTile& aPossibleNeighbour) const;
+
+	/* Return a ref to a neighbour depending on the direction.
+	* This will return false if no neighbour in the direction
+	*/
+	UFUNCTION()
+	bool GetNeighbourAlongDirection(const FGridTile& aTile, int aDirection, FGridTile& outNeighbour) const;
 
 protected:
 
@@ -99,11 +113,11 @@ protected:
 	float TraceLength = 500.f;
 
 	/* Defines the agent radius, will be used for the generation */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Agent")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Agent", meta = (UIMin = "0"))
 	float AgentRadius;
 
 	/* Defines the agent max slope */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Agent")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Agent", meta = (UIMin = "0", UIMax = "90"))
 	float AgentMaxSlope;
 
 	/* Defines if we should enable or not virtual tiles */
@@ -113,4 +127,16 @@ protected:
 	/* Access to the bottom left position of the grid */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Generation Parameters")
 	FVector BottomLeftPosition;
+
+	/* Defines the offset for the X axis on the grid */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<int> NeighbourXOffsets;
+
+	/* Defines the offset for the Y axis on the grid */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<int> NeighbourYOffsets;
+
+	/* Defines the offset for the neighbours */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<int> NeighbourOffset;
 };

@@ -18,6 +18,10 @@ public:
 	/* Default constructor */
 	FGridTile();
 
+	/* Returns if this tile has a valid connection along aDirection */
+	bool HasConnectionAlongDirection(int aDirection) const;
+
+
 	/* Defines the tile index in the grid */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int GridIndex;

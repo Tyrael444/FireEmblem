@@ -3,6 +3,8 @@
 
 #include "Navigation/GridNavMesh.h"
 
+#pragma optimize("", off)
+
 // Sets default values
 AGridNavMesh::AGridNavMesh()
 {
@@ -28,6 +30,8 @@ void AGridNavMesh::Scan()
 		return;
 	}
 
+	SetupGrid();
+
 	CreateTiles();
 
 	CalculateTilesPositions();
@@ -39,9 +43,17 @@ void AGridNavMesh::Scan()
 
 void AGridNavMesh::DrawTiles() const
 {
+	// might move it to a rendering component
 	for (const auto& tile : Tiles)
 	{
-		DrawDebugBox(GetWorld(), tile.WorldPosition, TileSize, tile.WalkableMask > 0 ? FColor::Blue : FColor::Red);
+		DrawDebugBox(GetWorld(), tile.WorldPosition, TileSize, tile.WalkableMask > 0 ? FColor::Blue : FColor::Red, true);
+
+		for (int i = 0; i < 4; ++i)
+		{
+			FGridTile neighbour;
+			if (GetNeighbourAlongDirection(tile, i, neighbour))
+				DrawDebugLine(GetWorld(), tile.WorldPosition, neighbour.WorldPosition, FColor::Red, true);
+		}
 	}
 }
 
@@ -52,12 +64,30 @@ void AGridNavMesh::BeginPlay()
 	Scan();
 }
 
-void AGridNavMesh::CreateTiles()
+void AGridNavMesh::SetupGrid()
 {
 	ClearTiles();
 
-	Tiles.Init(FGridTile(), TileCount.X * TileCount.Y);
+	BottomLeftPosition = GetActorLocation() - (FVector(TileCount / 2) * TileSize);
 
+	NeighbourOffset.Add(TileCount.X); // up
+	NeighbourOffset.Add(1); // right
+	NeighbourOffset.Add(-TileCount.X); // down
+	NeighbourOffset.Add(-1); // left
+
+	NeighbourXOffsets.Add(1); // up
+	NeighbourXOffsets.Add(0); // right dir
+	NeighbourXOffsets.Add(-1); // down dir
+	NeighbourXOffsets.Add(0); // left
+	
+	NeighbourYOffsets.Add(0); // up
+	NeighbourYOffsets.Add(1); // right
+	NeighbourYOffsets.Add(0); // down
+	NeighbourYOffsets.Add(-1); // left
+}
+
+void AGridNavMesh::CreateTiles()
+{
 	for (int i = 0; i < TileCount.X; ++i)
 	{
 		for (int j = 0; j < TileCount.Y; ++j)
@@ -67,13 +97,16 @@ void AGridNavMesh::CreateTiles()
 			tile.GridIndex = index;
 		}
 	}
-
-	BottomLeftPosition = GetActorLocation() - (FVector(TileCount / 2) * TileSize);
 }
 
-void AGridNavMesh::ClearTiles()
+void AGridNavMesh::ClearTiles(bool bShouldReinit /*= true*/)
 {
 	Tiles.Empty();
+
+	if (bShouldReinit)
+		Tiles.Init(FGridTile(), TileCount.X * TileCount.Y);
+
+	FlushPersistentDebugLines(GetWorld());
 }
 
 void AGridNavMesh::CalculateTilesPositions()
@@ -108,20 +141,64 @@ void AGridNavMesh::CalculateTile(int aXIndex, int aYIndex)
 
 		FHitResult res = results[0];
 		tile.WorldPosition.Z = res.Location.Z;
-		tile.WalkableMask = 1;
+
+		// ensure that the tile is walkable depending on the agent max slope
+		float angle = FVector::DotProduct(res.ImpactNormal, GetActorUpVector());
+		float slope = FMath::Cos(FMath::DegreesToRadians(AgentMaxSlope));
+
+		tile.WalkableMask = angle >= slope;
 	}
 }
 
 void AGridNavMesh::CalculateTilesConnections()
 {
+	for (int i = 0; i < TileCount.X; ++i)
+	{
+		for (int j = 0; j < TileCount.Y; ++j)
+		{
+			CalculateTileConnections(i, j);
+		}
+	}
 }
 
 void AGridNavMesh::CalculateTileConnections(int aXIndex, int aYIndex)
 {
+	int index = aXIndex * TileCount.Y + aYIndex;
+	FGridTile& tile = Tiles[index];
+
+	// reset neighbours in case the tile isn't walkable
+	if (tile.WalkableMask == 0)
+	{
+		tile.NeighbourMask = 0;
+		return;
+	}
+
+	// as we only support four directions currently (up, down, left, right) only test for those
+	// later on, we might support diagonals (and hexes?)
+	for (int i = 0; i < 4; ++i)
+	{
+		int x = aXIndex + NeighbourXOffsets[i];
+		int y = aYIndex + NeighbourYOffsets[i];
+
+		// Check if the new position is inside the grid
+		if (x >= 0 && y >= 0 && x < TileCount.X && y < TileCount.Y) 
+		{
+			FGridTile& neighbour = Tiles[index + NeighbourOffset[i]];
+
+			if (IsConnectionValid(tile, neighbour))
+			{
+				// Enable connection i
+				tile.NeighbourMask |= 1 << i;
+			}
+		}
+	}
 }
 
 bool AGridNavMesh::PerformSanityCheck()
 {
+	// this should perform a bunch of test to ensure everything is setup correctly
+	// if not, give a message to the user
+
 	if (GenerationMethod == EFEGridGenerationMethod::BOUNDS && !GridBounds)
 	{
 		// add log
@@ -131,3 +208,26 @@ bool AGridNavMesh::PerformSanityCheck()
 
 	return true;
 }
+
+bool AGridNavMesh::IsConnectionValid(const FGridTile& aTile, const FGridTile& aPossibleNeighbour) const
+{
+	// if any of the tiles isn't walkable, no connection can be done
+	if (aTile.WalkableMask == 0 || aPossibleNeighbour.WalkableMask == 0)
+		return false;
+
+	// shall we add other tests here?
+
+	return true;
+}
+
+bool AGridNavMesh::GetNeighbourAlongDirection(const FGridTile& aTile, int aDirection, FGridTile& outNeighbour) const
+{
+	if (!aTile.HasConnectionAlongDirection(aDirection))
+		return false;
+
+	outNeighbour = Tiles[aTile.GridIndex + NeighbourOffset[aDirection]];
+
+	return true;
+}
+
+#pragma optimize("", on)

@@ -6,8 +6,13 @@
 FGridTile::FGridTile()
 	:	GridIndex(0),
 		WorldPosition(),
-		Cost(0),
+		Cost(1),
 		NeighbourMask(0),
 		WalkableMask(0)
 {
+}
+
+bool FGridTile::HasConnectionAlongDirection(int aDirection) const
+{
+	return (NeighbourMask >> aDirection) & 1;
 }
