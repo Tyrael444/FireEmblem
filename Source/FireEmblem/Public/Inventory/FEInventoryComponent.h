@@ -38,7 +38,7 @@ public:
 	/* Create an instance from anItem and add it to the inventory 
 	* If bEquipItem is set to true, will equip the newly added item
 	*/
-	void CreateAndAddItem(const TSubclassOf<UFEBaseClass>& anItem, bool bEquipItem = false);
+	void CreateAndAddItem(const TSubclassOf<UFEBaseItem>& anItem, bool bEquipItem = false);
 
 	/* Remove an item from the inventory.
 	* Can auto equip the first possible item if bAutoEquip is set to true

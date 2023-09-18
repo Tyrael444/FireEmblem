@@ -58,12 +58,6 @@ void AFEBaseCharacter::InitComponents()
 	}
 }
 
-// Called to bind functionality to input
-void AFEBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
-
 UAbilitySystemComponent* AFEBaseCharacter::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;

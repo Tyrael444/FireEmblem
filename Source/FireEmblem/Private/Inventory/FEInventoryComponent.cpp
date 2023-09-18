@@ -41,7 +41,7 @@ void UFEInventoryComponent::AddItem(const TObjectPtr<UFEBaseItem> anItem, bool b
 		EquipItem(anItem);
 }
 
-void UFEInventoryComponent::CreateAndAddItem(const TSubclassOf<UFEBaseClass>& anItem, bool bEquipItem /*= false*/)
+void UFEInventoryComponent::CreateAndAddItem(const TSubclassOf<UFEBaseItem>& anItem, bool bEquipItem /*= false*/)
 {
 	TObjectPtr<UFEBaseItem> item = NewObject<UFEBaseItem>(this, anItem.Get());
 	check(item);

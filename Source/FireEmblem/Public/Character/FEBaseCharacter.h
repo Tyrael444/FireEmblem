@@ -7,7 +7,7 @@
 #include "Combat/FECombatAgent.h"
 #include "Combat/FECombatData.h"
 #include "Dialogue/FEDialogueAgent.h"
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Actor.h"
 #include "GenericTeamAgentInterface.h"
 #include "Turn/FETurnAgent.h"
 #include "FEBaseCharacter.generated.h"
@@ -26,7 +26,7 @@ class FEStoryElement;				// defines the character story background, tags, etc
 class FEDialogueSystem;				// link to the dialogue system
 
 UCLASS(BlueprintType, meta=(Tooltip = "Base class for every character of the Fire Emblem Project."))
-class FIREEMBLEM_API AFEBaseCharacter : public APawn, public IFECombatAgent, public IGenericTeamAgentInterface, public IAbilitySystemInterface, 
+class FIREEMBLEM_API AFEBaseCharacter : public AActor, public IFECombatAgent, public IGenericTeamAgentInterface, public IAbilitySystemInterface, 
 										public IFEDialogueAgent, public IFETurnAgent
 {
 	GENERATED_BODY()
@@ -42,9 +42,6 @@ public:
 	/************
 	* Supers overrides
 	************/
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 

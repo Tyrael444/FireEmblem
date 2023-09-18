@@ -7,6 +7,8 @@
 #include "GameplayEffectExecutionCalculation.h"
 #include "FEGELevelUPExecutionCalculation.generated.h"
 
+class AFEBaseCharacter;
+
 struct FEStatWrapper
 {
 public:

@@ -89,3 +89,13 @@ enum class EFEGridGenerationMethod : uint8
 
 	GRIDGENERATIONMETHOD_COUNT	UMETA(Hidden)
 };
+
+UENUM(BlueprintType)
+enum class EFECameraMode : uint8
+{
+	FREE				UMETA(DisplayName = "Free", Tooltip = "Free mode. Means the player have a complete control on it"),
+	LOCK				UMETA(DisplayName = "Lock", Tooltip = "Lock mode. Means it will follow a character, without the player being able to have any control on the camera"),
+	COMBAT				UMETA(DisplayName = "Combat", Tooltip = "Combat camera mode. The player doesn't have any control on the camera"),
+
+	CAMERAMODE_COUNT	UMETA(Hidden)
+};

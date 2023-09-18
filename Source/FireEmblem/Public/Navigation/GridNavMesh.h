@@ -10,6 +10,30 @@
 
 class AGridBoundsVolume;
 
+USTRUCT(BlueprintType)
+struct FGridTileMeshData
+{
+	GENERATED_BODY()
+
+public:
+
+	/* Defines the mesh that will be used for the grid tiles */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<UStaticMesh> TileMesh;
+
+	/* Defines the material for the border of the tile mesh */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<UMaterialInstance> TileBorderMaterial;
+
+	/* Defines the material to fill the tile mesh */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<UMaterialInstance> TileFillMaterial;
+
+	/* Defines the default size for the tile mesh */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector TileMeshSize;
+};
+
 UCLASS(config = Engine, defaultconfig, hidecategories = (Input, Rendering, Tags, Transformation, Actor, Layers, Replication))
 class FIREEMBLEM_API AGridNavMesh : public AActor
 {
@@ -43,8 +67,8 @@ protected:
 	void CreateTiles();
 
 	/* Clear the tiles array */
-	UFUNCTION()
-	void ClearTiles(bool bShouldReinit = true);
+	UFUNCTION(CallInEditor, Category = "Grid NavMesh")
+	void ClearTiles();
 
 	/* Calculate all the tiles positions (calculate exact world location, defines if walkable, etc).
 	* Make sure to call CalculateTilesConnections() afterwards to properly update the tiles connections
@@ -139,4 +163,12 @@ protected:
 	/* Defines the offset for the neighbours */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<int> NeighbourOffset;
+
+	/* Defines the mesh data that will be used for our tiles */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tiles")
+	FGridTileMeshData MeshData;
+
+	/* Instance mesh for the tiles */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UInstancedStaticMeshComponent> TileMeshes;
 };

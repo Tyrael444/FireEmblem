@@ -2,6 +2,7 @@
 
 
 #include "Navigation/GridNavMesh.h"
+#include "Components/InstancedStaticMeshComponent.h"
 
 #pragma optimize("", off)
 
@@ -10,6 +11,10 @@ AGridNavMesh::AGridNavMesh()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	TileMeshes = CreateDefaultSubobject<UInstancedStaticMeshComponent>("Tile Meshes");
+	TileMeshes->SetStaticMesh(MeshData.TileMesh);
+	TileMeshes->SetMaterial(0, MeshData.TileBorderMaterial);
 }
 
 void AGridNavMesh::Scan()
@@ -46,7 +51,7 @@ void AGridNavMesh::DrawTiles() const
 	// might move it to a rendering component
 	for (const auto& tile : Tiles)
 	{
-		DrawDebugBox(GetWorld(), tile.WorldPosition, TileSize, tile.WalkableMask > 0 ? FColor::Blue : FColor::Red, true);
+		//DrawDebugBox(GetWorld(), tile.WorldPosition, TileSize, tile.WalkableMask > 0 ? FColor::Blue : FColor::Red, true);
 
 		for (int i = 0; i < 4; ++i)
 		{
@@ -55,6 +60,12 @@ void AGridNavMesh::DrawTiles() const
 				DrawDebugLine(GetWorld(), tile.WorldPosition, neighbour.WorldPosition, FColor::Red, true);
 		}
 	}
+
+	FVector origin;
+	FVector boundingBox;
+	GetActorBounds(false, origin, boundingBox, true);
+
+	DrawDebugBox(GetWorld(), origin, boundingBox, FColor::Black);
 }
 
 void AGridNavMesh::BeginPlay()
@@ -70,6 +81,13 @@ void AGridNavMesh::SetupGrid()
 
 	BottomLeftPosition = GetActorLocation() - (FVector(TileCount / 2) * TileSize);
 
+	TileMeshes->SetStaticMesh(MeshData.TileMesh);
+	TileMeshes->SetMaterial(0, MeshData.TileBorderMaterial);	
+	
+	NeighbourOffset.Empty();
+	NeighbourXOffsets.Empty();
+	NeighbourYOffsets.Empty();
+
 	NeighbourOffset.Add(TileCount.X); // up
 	NeighbourOffset.Add(1); // right
 	NeighbourOffset.Add(-TileCount.X); // down
@@ -79,7 +97,7 @@ void AGridNavMesh::SetupGrid()
 	NeighbourXOffsets.Add(0); // right dir
 	NeighbourXOffsets.Add(-1); // down dir
 	NeighbourXOffsets.Add(0); // left
-	
+
 	NeighbourYOffsets.Add(0); // up
 	NeighbourYOffsets.Add(1); // right
 	NeighbourYOffsets.Add(0); // down
@@ -99,13 +117,14 @@ void AGridNavMesh::CreateTiles()
 	}
 }
 
-void AGridNavMesh::ClearTiles(bool bShouldReinit /*= true*/)
+void AGridNavMesh::ClearTiles()
 {
 	Tiles.Empty();
+	Tiles.Init(FGridTile(), TileCount.X * TileCount.Y);
 
-	if (bShouldReinit)
-		Tiles.Init(FGridTile(), TileCount.X * TileCount.Y);
+	TileMeshes->ClearInstances();
 
+	// remove the grid debug, probably should be handled by a rendering component
 	FlushPersistentDebugLines(GetWorld());
 }
 
@@ -148,6 +167,10 @@ void AGridNavMesh::CalculateTile(int aXIndex, int aYIndex)
 
 		tile.WalkableMask = angle >= slope;
 	}
+
+	FTransform transform (tile.WorldPosition);
+	transform.SetScale3D(TileSize / MeshData.TileMeshSize);
+	TileMeshes->AddInstance(transform, true);
 }
 
 void AGridNavMesh::CalculateTilesConnections()
