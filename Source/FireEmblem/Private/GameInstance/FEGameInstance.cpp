@@ -2,6 +2,7 @@
 
 
 #include "GameInstance/FEGameInstance.h"
+#include "Kismet/GameplayStatics.h"
 
 const UFEExperienceManager* UFEGameInstance::GetExperienceManager() const
 {

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Abilities/FEBaseGameplayAbility.h"
 #include "AbilitySystemInterface.h"
 #include "Combat/FECombatAgent.h"
 #include "Combat/FECombatData.h"
@@ -15,7 +16,6 @@
 class UFEAbilitySystemComponent;
 class UFEBaseClass;
 class UFEBaseItem;
-class UFEBaseGameplayAbility;
 class UFECharacterAttributeSet;	
 class UFECharacterClassComponent;	
 class UFEGrowthDataAsset;

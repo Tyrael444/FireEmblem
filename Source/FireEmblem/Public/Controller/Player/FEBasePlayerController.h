@@ -106,8 +106,4 @@ protected:
 	/* Input action to do a camera zoom */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input|Actions")
 	TObjectPtr<UInputAction> CameraZoomAction;
-
-	/* Pointer to the grid, in order to clamp the camera to the grid bounds */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
-	TWeakObjectPtr<AGridNavMesh> Grid;
 };

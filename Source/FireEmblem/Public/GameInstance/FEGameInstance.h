@@ -6,6 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "FEGameInstance.generated.h"
 
+class AGridNavMesh;
 class UFEExperienceManager;
 class UFECombatManager;
 

@@ -6,8 +6,6 @@
 #include "Engine/DataAsset.h"
 #include "FEBaseItem.generated.h"
 
-class UFEBaseGameplayAbility;
-
 /**
  * 
  */
@@ -38,11 +36,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Name")
 	FName ItemName;
 
-	/* Defines the item gold value, when purchasing it */
+	/* Defines the item gold value, when purchasing it.
+	* Will probably need another field when selling it, or some calculations to handle that
+	*/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Value")
 	int GoldValue;
 
-	/* Defines the item ability. Would make sense to be null ? */
+	/* Defines the item ability. Can be null if the item doesn't have a special ability. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability")
 	TSubclassOf<UFEBaseGameplayAbility> Ability;
 };
