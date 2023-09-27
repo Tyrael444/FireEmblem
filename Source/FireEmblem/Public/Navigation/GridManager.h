@@ -111,6 +111,7 @@ public:
 	/* Returns if a specific index is linked to a tile in the grid */
 	UFUNCTION(BlueprintCallable)
 	virtual bool IsIndexValid(const int& anIndex) const;
+	virtual bool IsIndexValid(const int& aX, const int& aY) const;
 
 	/* Compares height difference of two tiles. Returns the appropriate edge cost between them based on the values specified. 
 	* If the difference is larger than the HeightImpassableCutoff, returns -1 (indicating that the edge should be removed).
@@ -252,7 +253,7 @@ protected:
 
 	/* Filles the BaseEdges array with the appropriate relative indexes of neighbor tiles */
 	UFUNCTION(BlueprintCallable)
-	virtual TArray<int> SetupBaseEdges();
+	virtual TArray<FIntPoint> SetupBaseEdges();
 
 	/* Pregenerate Gameplay Grids: Generates some of the grids used for gameplay in the construction scripts so they won't have to load during the BeginPlay.
 	* Speeds up startup, but slows down the construction script. 
@@ -490,7 +491,7 @@ protected:
 
 	/* Contains the base edges directions */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Miscellaneous")
-	TArray<int> BaseEdgesDirection;
+	TArray<FIntPoint> BaseEdgesDirection;
 
 	/* Generates some of the grids used for gameplay in the construction scripts for debugging purposes (check this along with DisplayTileIndexes and DisplayTileEdges to visualize this data in editor) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config|Grid debug")

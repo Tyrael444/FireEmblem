@@ -9,7 +9,6 @@ enum class EGridBoundingBox : uint8
 {
 	HIDDEN					UMETA(DisplayName = "Hidden"),
 	GRID_SIZE				UMETA(DisplayName = "By Grid Size"),
-	FULL_VIRTUAL			UMETA(DisplayName = "Full Virtual"),
 
 	GRIDBOUNDINGBOX_COUNT	UMETA(Hidden)
 };

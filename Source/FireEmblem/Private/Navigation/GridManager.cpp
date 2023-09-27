@@ -144,7 +144,7 @@ bool AGridManager::CalculateTileSize()
 	/* sets the tile size. we could either only take the X axis bound as we are using squared grids */
 	FBoxSphereBounds bounds = DefaultTileMesh->GetBounds();
 	TileSize.X = bounds.BoxExtent.X * 2;
-	TileSize.Y = bounds.BoxExtent.Y * 2;
+	TileSize.Y = bounds.BoxExtent.X * 2;
 
 	return true;
 }
@@ -179,14 +179,6 @@ void AGridManager::ScaleCollisionAndHeightmapBoxes(bool bOverrideSize, const FIn
 			localX = GridSize.X;
 			localY = GridSize.Y;
 			break;
-
-
-		case EGridBoundingBox::FULL_VIRTUAL:
-
-			localX = GridSize.X;
-			localY = GridSize.Y;
-			break;
-
 
 		case EGridBoundingBox::GRIDBOUNDINGBOX_COUNT:
 		default:
@@ -246,10 +238,9 @@ void AGridManager::SetupHeightmapBox()
 
 	/* depending on our height settings, only the Z axis will vary */
 	HeightmapBounds->SetRelativeTransform(FTransform(FRotator(), location, scale));
+	HeightmapBounds->SetVisibility(ShowHeightmapBoundingBox != EGridBoundingBox::HIDDEN);
 
 	SetupGridLineDisplay();
-
-	HeightmapBounds->SetVisibility(ShowHeightmapBoundingBox != EGridBoundingBox::HIDDEN);
 }
 
 void AGridManager::SetupGridLineDisplay()
@@ -271,14 +262,20 @@ void AGridManager::SetupGridLineDisplay()
 	location.Z = (MaxHeight + MinHeight) / 2;
 
 	/* sets the rotator as 90 on pitch (FRotator(Pitch, Yaw, Roll)) */
-	GridDecal->SetRelativeTransform(FTransform(FRotator(90, 0, 0), location, FVector((MaxHeight - MinHeight) / DefaultTileWidth * 2, scale.X, scale.Y)));
+	//GridDecal->SetRelativeTransform(FTransform(FRotator(90, 0, 0), location, FVector((MaxHeight - MinHeight) / DefaultTileWidth * 2, scale.X, scale.Y)));
+	FTransform transform;
+	transform.SetRotation(FRotator(90, 0, 0).Quaternion());
+	transform.SetLocation(location);
+	transform.SetScale3D(FVector(((MaxHeight - MinHeight) / DefaultTileWidth) / 2, scale.X, scale.Y));
+
+	GridDecal->SetRelativeTransform(transform);
 
 	/* create the instance and set the default value for our X and Y params to an arbitrary value */
 	auto instance = GridDecal->CreateDynamicMaterialInstance();
 
 	/* set a bunch of parameters from our material instance */
-	instance->SetScalarParameterValue("X", (ShowHeightmapBoundingBox != EGridBoundingBox::FULL_VIRTUAL) ? GridSize.X : 20.f);
-	instance->SetScalarParameterValue("Y", (ShowHeightmapBoundingBox != EGridBoundingBox::FULL_VIRTUAL) ? GridSize.Y : 20.f);
+	instance->SetScalarParameterValue("X", GridSize.X);
+	instance->SetScalarParameterValue("Y", GridSize.Y);
 	instance->SetScalarParameterValue("Thickness", GridLineThickness);
 	instance->SetVectorParameterValue("Color", GridLineColor);
 	instance->SetScalarParameterValue("Opacity", GridLineOpacity);
@@ -484,23 +481,23 @@ void AGridManager::UpdateHeightmapCache(const int aGridIndex)
 	nestedArray.Values.Add(aGridIndex / IndexZ);
 }
 
-TArray<int> AGridManager::SetupBaseEdges()
+TArray<FIntPoint> AGridManager::SetupBaseEdges()
 {
 	BaseEdgesDirection.Empty();
 
 	/* defines the 4 base direction (right, down, left, up) */
-	BaseEdgesDirection.Add(1);
-	BaseEdgesDirection.Add(-GridSize.X);
-	BaseEdgesDirection.Add(-1);
-	BaseEdgesDirection.Add(GridSize.X);
+	BaseEdgesDirection.Add(FIntPoint(1, 0));
+	BaseEdgesDirection.Add(FIntPoint(0, -1));
+	BaseEdgesDirection.Add(FIntPoint(-1, 0));
+	BaseEdgesDirection.Add(FIntPoint(0, 1));
 
 	/* incase we use diagonal movement, add the specific cases (up right, down right, down left, up left) */
 	if (UseDiagonalMovement)
 	{
-		BaseEdgesDirection.Add(GridSize.X + 1);
-		BaseEdgesDirection.Add(-GridSize.X + 1);
-		BaseEdgesDirection.Add(-GridSize.X - 1);
-		BaseEdgesDirection.Add(GridSize.X - 1);
+		BaseEdgesDirection.Add(FIntPoint(1, 1));
+		BaseEdgesDirection.Add(FIntPoint(-1, 1));
+		BaseEdgesDirection.Add(FIntPoint(-1, -1));
+		BaseEdgesDirection.Add(FIntPoint(1, -1));
 	}
 
 	return BaseEdgesDirection;
@@ -554,20 +551,21 @@ void AGridManager::AddTileEdgesNoHeightmap(const int& aGridIndex, bool bShouldTr
 	FBaseTile& currentTile = GetTileFromIndex(aGridIndex);
 
 	/* test the possible neighbours on each direction (starting with the "non diagonal" ones) */
-	for (int edgeDirection = 0; edgeDirection < BaseEdgesDirection.Num(); ++edgeDirection)
+	for (int edge = 0; edge < BaseEdgesDirection.Num(); ++edge)
 	{
-		int neighbourIndex = aGridIndex + BaseEdgesDirection[edgeDirection];
-		if (!IsIndexValid(neighbourIndex) || currentTile.HasValidEdgeAlongDirection(edgeDirection))
+		int x = GetXComponent(aGridIndex) + BaseEdgesDirection[edge].X;
+		int y = GetYComponent(aGridIndex) + BaseEdgesDirection[edge].Y;
+		if (!IsIndexValid(x, y) || currentTile.HasValidEdgeAlongDirection(edge))
 			continue;
-	
-		/* check if there is any wall between the current tile and the targeted one */
+
+		int neighbourIndex = x * GridSize.X + y;
 		if (bShouldTraceForWalls && TraceOnGrid(aGridIndex, neighbourIndex, WallTraceChannel, WallTraceHeight))
 			continue;
-	
-		/* sets for both tiles that there is a valid connection in the corresponding direction */
-		currentTile.AddEdgeAlongDirection(edgeDirection);
+
+		currentTile.AddEdgeAlongDirection(edge);
 		FBaseTile& neighbourTile = GetTileFromIndex(neighbourIndex);
-		neighbourTile.AddEdgeAlongDirection((edgeDirection + 2) % BaseEdgesDirection.Num());
+		neighbourTile.AddEdgeAlongDirection((edge + 2) % BaseEdgesDirection.Num());
+
 	}
 }
 
@@ -578,10 +576,12 @@ void AGridManager::AddTileEdgesOneLevelHeightmap(const int& aGridIndex, bool bSh
 
 	for (int edgeDirection = 0; edgeDirection < BaseEdgesDirection.Num(); ++edgeDirection)
 	{
-		int neighbourIndex = aGridIndex + BaseEdgesDirection[edgeDirection];
-		if (!IsIndexValid(neighbourIndex) || currentTile.HasValidEdgeAlongDirection(edgeDirection))
+		int x = GetXComponent(aGridIndex) + BaseEdgesDirection[edgeDirection].X;
+		int y = GetYComponent(aGridIndex) + BaseEdgesDirection[edgeDirection].Y;
+		if (!IsIndexValid(x, y) || currentTile.HasValidEdgeAlongDirection(edgeDirection))
 			continue;
 
+		int neighbourIndex = x * GridSize.X + y;
 		FBaseTile& neighbourTile = GetTileFromIndex(neighbourIndex);
 
 		/* compares the cost to 0 incase we change it later on (add some "error codes" or whatever) */
@@ -646,6 +646,7 @@ void AGridManager::DisplayTileIndexes()
 
 void AGridManager::DisplayTileEdges()
 {
+	/* either clear the current instances or create the object with the default mesh */
 	if (EdgeMeshInstances)
 	{
 		EdgeMeshInstances->ClearInstances();
@@ -653,10 +654,11 @@ void AGridManager::DisplayTileEdges()
 	else
 	{
 		EdgeMeshInstances = NewObject<UInstancedStaticMeshComponent>(this);
-		EdgeMeshInstances->SetRelativeLocation(GetActorLocation());
+		EdgeMeshInstances->SetStaticMesh(EdgeArrowMesh);
 	}
 
-	EdgeMeshInstances->SetStaticMesh(EdgeArrowMesh);
+	/* reset the mesh position, incase the grid moved */
+	EdgeMeshInstances->SetRelativeLocation(GetActorLocation());
 
 	for (const auto& currentTile : GridTiles)
 	{
@@ -665,14 +667,15 @@ void AGridManager::DisplayTileEdges()
 			if (!currentTile.HasValidEdgeAlongDirection(edgeDirection))
 				continue;
 
-			int idx = currentTile.GridIndex + BaseEdgesDirection[edgeDirection];
-			FBaseTile& neighbourTile = GetTileFromIndex(currentTile.GridIndex + BaseEdgesDirection[edgeDirection]);
+			int x = GetXComponent(currentTile.GridIndex) + BaseEdgesDirection[edgeDirection].X;
+			int y = GetYComponent(currentTile.GridIndex) + BaseEdgesDirection[edgeDirection].Y;
+			FBaseTile& neighbourTile = GetTileFromIndex(x * GridSize.X + y);
 
 			FVector lookAtDir = neighbourTile.TileLocation - currentTile.TileLocation;
 			lookAtDir.Normalize();
 
 			FVector location = currentTile.TileLocation + (lookAtDir * TileSize.X / 3);
-			location.Z += 50.f;
+			location.Z += 10.f;
 
 			EdgeMeshInstances->AddInstance(FTransform(lookAtDir.Rotation(), location, FVector(1.f, 1.f, 1.f)));
 		}
@@ -820,6 +823,11 @@ bool AGridManager::IsIndexValid(const int& anIndex) const
 	return (x >= 0) && (y >= 0) && (x < GridSize.X) && (y < GridSize.Y);
 }
 
+bool AGridManager::IsIndexValid(const int& aX, const int& aY) const
+{
+	return (aX >= 0) && (aY >= 0) && (aX < GridSize.X) && (aY < GridSize.Y);
+}
+
 int AGridManager::GetEdgeCostFromZDifference(const float& aStartZ, const float& aTargetZ) const
 {
 	float abs = FMath::Abs(aStartZ - aTargetZ);
@@ -901,12 +909,12 @@ const FVector AGridManager::ConvertWorldLocationToGrid(const FVector& aWorldLoca
 
 const int AGridManager::GetXComponent(const int& aGridIndex) const
 {
-	return (aGridIndex % GridSize.X);
+	return aGridIndex / GridSize.X;
 }
 
 const int AGridManager::GetYComponent(const int& aGridIndex) const
 {
-	return aGridIndex / GridSize.X;
+	return aGridIndex % GridSize.X;
 }
 
 const int AGridManager::GetZComponent(const int& aGridIndex) const
