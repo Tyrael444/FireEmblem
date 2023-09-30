@@ -328,24 +328,24 @@ protected:
 	* Components
 	********/
 
-	/* Default tile instance mesh */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
-	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> DefaultTile;
-
-	/* Collision plane component */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
-	TObjectPtr<UStaticMeshComponent> CollisionPlane;
-
-	/* Grid height bounds */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
-	TObjectPtr<UBoxComponent> HeightmapBounds;
-
 	/* Mesh used to populate the ground level of a grid */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config|Grid options")
 	TObjectPtr<UStaticMesh> DefaultTileMesh;
 
+	/* Default tile instance mesh */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default")
+	TObjectPtr<UInstancedStaticMeshComponent> DefaultTile;
+
+	/* Collision plane component */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default")
+	TObjectPtr<UStaticMeshComponent> CollisionPlane;
+
+	/* Grid height bounds */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default")
+	TObjectPtr<UBoxComponent> HeightmapBounds;
+
 	/* Grid decal used to draw display lines, etc */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Default")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Default")
 	TObjectPtr<UDecalComponent> GridDecal;
 
 	/* Arrow mesh used to draw the edges */
@@ -436,7 +436,7 @@ protected:
 	* Meshes below this height will not be checked
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config|Procedural")
-	float MinHeight = -4.f;
+	float MinHeight = -50.f;
 
 	/* The minimum distance that must separate two levels on a multi-level grid */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config|Procedural")

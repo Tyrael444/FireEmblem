@@ -31,7 +31,7 @@ AGridManager::AGridManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	DefaultTile = CreateDefaultSubobject<UHierarchicalInstancedStaticMeshComponent>("Default Tile");
+	DefaultTile = CreateDefaultSubobject<UInstancedStaticMeshComponent>("Default Tile");
 	DefaultTile->SetupAttachment(RootComponent);
 
 	CollisionPlane = CreateDefaultSubobject<UStaticMeshComponent>("Collision Plane");
@@ -39,6 +39,7 @@ AGridManager::AGridManager()
 
 	HeightmapBounds = CreateDefaultSubobject<UBoxComponent>("Heightmap Bounds");
 	HeightmapBounds->SetupAttachment(RootComponent);
+	HeightmapBounds->SetBoxExtent(FVector(100.f, 100.f, 100.f));
 
 	GridDecal = CreateDefaultSubobject<UDecalComponent>("Grid Decal");
 	GridDecal->SetupAttachment(RootComponent);
@@ -163,7 +164,9 @@ void AGridManager::SetupCollisionPlane()
 
 void AGridManager::ScaleCollisionAndHeightmapBoxes(bool bOverrideSize, const FIntPoint& aSizeOverride, FVector& outLocation, FVector& outScale)
 {
-	int localX, localY;
+	int localX;
+	int localY;
+
 	if (bOverrideSize)
 	{
 		localX = aSizeOverride.X;
@@ -192,11 +195,11 @@ void AGridManager::ScaleCollisionAndHeightmapBoxes(bool bOverrideSize, const FIn
 
 	/* sets the scale and position depending on our heightmap setting and tilesize defined beforehand */
 	outScale.X = localX * (TileSize.X / DefaultTileWidth);
-	outScale.Y = localY * (TileSize.X / DefaultTileWidth);
+	outScale.Y = localY * (TileSize.Y / DefaultTileWidth);
 	outScale.Z = 0;
 
 	outLocation.X = ((localX * TileSize.X) / 2) - (TileSize.X / 2);
-	outLocation.Y = ((localY * TileSize.X) / 2) - (TileSize.X / 2);
+	outLocation.Y = ((localY * TileSize.Y) / 2) - (TileSize.Y / 2);
 	outLocation.Z = .1f;
 }
 
@@ -259,16 +262,13 @@ void AGridManager::SetupGridLineDisplay()
 	ScaleCollisionAndHeightmapBoxes(false, FIntPoint(), location, scale);
 
 	/* adjust the location and scale for the decal */
-	location.Z = (MaxHeight + MinHeight) / 2;
+	location.Z = (MaxHeight + MinHeight) / 2.f;
 
 	/* sets the rotator as 90 on pitch (FRotator(Pitch, Yaw, Roll)) */
-	//GridDecal->SetRelativeTransform(FTransform(FRotator(90, 0, 0), location, FVector((MaxHeight - MinHeight) / DefaultTileWidth * 2, scale.X, scale.Y)));
-	FTransform transform;
-	transform.SetRotation(FRotator(90, 0, 0).Quaternion());
-	transform.SetLocation(location);
-	transform.SetScale3D(FVector(((MaxHeight - MinHeight) / DefaultTileWidth) / 2, scale.X, scale.Y));
-
-	GridDecal->SetRelativeTransform(transform);
+	GridDecal->SetRelativeTransform(FTransform(
+		FRotator(90, 0, 0),
+		location,
+		FVector(((MaxHeight - MinHeight) / DefaultTileWidth) * 2, scale.Y, scale.X)));
 
 	/* create the instance and set the default value for our X and Y params to an arbitrary value */
 	auto instance = GridDecal->CreateDynamicMaterialInstance();
