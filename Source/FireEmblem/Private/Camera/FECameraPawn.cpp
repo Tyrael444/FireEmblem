@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Camera/FECameraPawn.h"
+
+#include "Camera/CameraComponent.h"
 #include "Camera/FECameraData.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameInstance/FEGameInstance.h"

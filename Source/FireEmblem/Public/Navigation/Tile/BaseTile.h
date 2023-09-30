@@ -7,14 +7,12 @@
 #include "BaseTile.generated.h"
 
 /**
- * 
+ * Default tile used by the grid logic and generic A*
  */
 USTRUCT(BlueprintType)
 struct FBaseTile
 {
 	GENERATED_BODY()
-
-public:
 
 	/********
 	* Utility
@@ -43,11 +41,22 @@ public:
 	*/
 	bool ModifyEdgeCost(const int& aDirection, const int& aNewCost);
 
+	/* Returns if the tile is blocked or not */
+	bool IsTileBlocked() const;
+
+	/* Sets the tile as blocked */
+	void BlockTile();
+
+	/* Sets the tile as not blocked */
+	void FreeTile();
+
 	/* Simple operator to know if 2 tiles are equals, mostly used by the grid manager */
 	friend bool operator== (const FBaseTile& aLeft, const FBaseTile& aRight);
 
 
-public:
+	/********
+	* Members
+	********/
 
 	/* Tile location in world space */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -70,4 +79,8 @@ public:
 	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<UBaseTileEffect>> TileEffects;
+
+	/* Defines if the tile is blocked at a given time (by default, it shouldn't, but in case someone is standing on the tile, or an object/something is on the tile) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bIsTileBlocked = false;
 };

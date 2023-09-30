@@ -34,3 +34,23 @@ enum class EGridTileEffect : uint8
 
 	GRIDTILEEFFECT_COUNT	UMETA(Hidden)
 };
+
+UENUM(BlueprintType)
+enum class EGraphAStarResult : uint8
+{
+	SEARCH_FAIL,
+	SEARCH_SUCCESS,
+	UNREACHABLE_GOAL,
+	INFINITE_LOOP,
+
+	GRAPHASTARRESULT_COUNT	UMETA(Hidden)
+};
+
+UENUM(BlueprintType)
+enum class EGraphAStarHeuristic : uint8
+{
+	DEFAULT						UMETA(DisplayName = "Default", Tooltip = "Use a default heuristic (set to 1)"),
+	MANHATTAN					UMETA(DisplayName = "Manhattan", Tooltip = "Use the manhattan distance for the heuristic"),
+
+	GRAPHASTARHEURISTIC_COUNT	UMETA(Hidden)
+};

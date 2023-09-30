@@ -51,6 +51,21 @@ bool FBaseTile::ModifyEdgeCost(const int& aDirection, const int& aNewCost)
 	return true;
 }
 
+bool FBaseTile::IsTileBlocked() const
+{
+	return bIsTileBlocked;
+}
+
+void FBaseTile::BlockTile()
+{
+	bIsTileBlocked = true;
+}
+
+void FBaseTile::FreeTile()
+{
+	bIsTileBlocked = false;
+}
+
 bool operator==(const FBaseTile& aLeft, const FBaseTile& aRight)
 {
 	return aLeft.GridIndex == aRight.GridIndex;
