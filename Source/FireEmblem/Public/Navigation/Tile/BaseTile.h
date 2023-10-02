@@ -14,6 +14,11 @@ struct FBaseTile
 {
 	GENERATED_BODY()
 
+	FBaseTile()
+		: TileRef(-1), ParentTileRef(-1), IsTileOpen(false), IsTileClosed(false)
+	{
+	}
+
 	/********
 	* Utility
 	********/
@@ -50,6 +55,24 @@ struct FBaseTile
 	/* Sets the tile as not blocked */
 	void FreeTile();
 
+	/* Modify the IsTileOpen flag, used by the generic pathfinder */
+	void MarkOpen();
+	void MarkNotOpen();
+
+	/* Modify the IsTileClosed flag, used by the generic pathfinder */
+	void MarkClosed();
+	void MarkNotClosed();
+
+	/* Access to the IsTileOpen flag */
+	bool IsOpened() const;
+
+	/* Access to the IsTileClosed flag */
+	bool IsClosed() const;
+
+	/* Returns the number of neighbours this tile have */
+	const int32 GetNeighbourCount() const;
+	int32 GetNeighbourCount();
+
 	/* Simple operator to know if 2 tiles are equals, mostly used by the grid manager */
 	friend bool operator== (const FBaseTile& aLeft, const FBaseTile& aRight);
 
@@ -68,6 +91,12 @@ struct FBaseTile
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 TileRef = 0;
 
+	/* Sets the default cost to reach this tile. 
+	* This can be override by effects, etc, and it will be added to the edge default cost to get the actual cost to get to this tile.
+	*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 DefaultCost = 0;
+
 	/* Mask defining the tile connections */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 EdgesMask = 0;
@@ -85,4 +114,20 @@ struct FBaseTile
 	/* Defines if the tile is blocked at a given time (by default, it shouldn't, but in case someone is standing on the tile, or an object/something is on the tile) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bIsTileBlocked = false;
+
+	/* Total cost to reach this node. Used by the generic pathfinder */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 TotalCost = 0;
+
+	/* Ref to the parent tile index, used by the generic pathfinder */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 ParentTileRef;
+
+	/* Used by the generic pathfinder */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	uint8 IsTileOpen : 1;
+
+	/* Used by the generic pathfinder */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	uint8 IsTileClosed : 1;
 };

@@ -124,6 +124,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual int GetEdgeCostFromZDifference(const float& aStartZ, const float& aTargetZ) const;
 
+	/* Given a specific tile or index, try to find the neighbour tile along a specific direction. 
+	* This assume that there is a connection between the 2 tiles
+	* If the index is invalid, return false; otherwise return true
+	*/
+	UFUNCTION(BlueprintCallable)
+	virtual bool GetNeighbourUsingDirection(const int32& aTileIndex, const int32& aDirection, FBaseTile& outNeighbourTile) const;
+	virtual bool GetNeighbourUsingDirection(const FBaseTile& aTile, const int32& aDirection, FBaseTile& outNeighbourTile) const;
+
 
 	/********
 	* Accessors
@@ -148,6 +156,14 @@ public:
 	/* Access to the default tile mesh */
 	UFUNCTION(BlueprintCallable)
 	UStaticMesh* GetDefaultTileMesh() const;
+
+	/* Returns the size of the graph (GraphSize.X * GraphSize.Y) */
+	UFUNCTION(BlueprintCallable)
+	int32 GetGraphSize() const;
+
+	/* Returns the tile size */
+	UFUNCTION(BlueprintCallable)
+	FVector GetTileSize() const;
 
 
 protected:
@@ -317,6 +333,7 @@ protected:
 private:
 
 	AGridManager();
+	~AGridManager();
 
 	/* Recursive function use for this CreateLocationsAndHeightmap */
 	void CreateLocationsAndHeightmap_Recursive(const int32& aGridIndex, FVector& aTraceStart, FVector& aTraceEnd, FVector& aLastHitPosition);

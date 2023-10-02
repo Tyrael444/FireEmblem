@@ -20,7 +20,24 @@ AGridManager* AGridManager::GetInstance()
 {
 	if (!Instance)
 	{
-		Instance = NewObject<AGridManager>();
+		TArray<AActor*> actors;
+
+		UGameplayStatics::GetAllActorsOfClass(GEngine->GameViewport->GetWorld(), AGridManager::StaticClass(), actors);
+		if (actors.Num() == 0)
+		{
+			// add log that none was created
+
+			Instance = NewObject<AGridManager>();
+		}
+		else
+		{
+			if (actors.Num() >= 2)
+			{
+				// add log, maybe destroy others ?
+			}
+
+			Instance = Cast<AGridManager>(actors[0]);
+		}
 	}
 
 	return Instance;
@@ -44,6 +61,11 @@ AGridManager::AGridManager()
 	GridDecal->SetupAttachment(RootComponent);
 }
 
+AGridManager::~AGridManager()
+{
+	Instance = nullptr;
+}
+
 #pragma endregion
 
 #pragma region Super overrides
@@ -63,6 +85,8 @@ void AGridManager::OnConstruction(const FTransform& Transform)
 	SpawnTileGrid();
 
 	ScaleAutoVolumes();
+
+	SetupGridArrays();
 
 	if (DebugDisplayPregeneratedGameplayGrids)
 		DebugPregenerateGameplayGrids();
@@ -285,7 +309,7 @@ bool AGridManager::SpawnTileGrid(bool bPrintWarning /*= true*/)
 	DefaultTile->ClearInstances();
 	GridTiles.Empty();
 
-	if (!ShowDefaultTile || (GridSize.GetMin() == 0))
+	if (!ShowDefaultTile || (GetGraphSize() == 0))
 	{
 		if (bPrintWarning)
 		{
@@ -547,9 +571,9 @@ void AGridManager::AddTileEdgesNoHeightmap(const int32& aGridIndex, bool bShould
 		if (bShouldTraceForWalls && TraceOnGrid(aGridIndex, neighbourIndex, WallTraceChannel, WallTraceHeight))
 			continue;
 
-		currentTile.AddEdgeAlongDirection(edge);
 		FBaseTile& neighbourTile = GetTileFromIndex(neighbourIndex);
-		neighbourTile.AddEdgeAlongDirection((edge + 2) % BaseEdgesDirection.Num());
+		currentTile.AddEdgeAlongDirection(edge, neighbourTile.DefaultCost + 1);
+		neighbourTile.AddEdgeAlongDirection((edge + 2) % BaseEdgesDirection.Num(), currentTile.DefaultCost + 1);
 
 	}
 }
@@ -579,8 +603,8 @@ void AGridManager::AddTileEdgesOneLevelHeightmap(const int32& aGridIndex, bool b
 			continue;
 
 		/* sets for both tiles that there is a valid connection in the corresponding direction */
-		currentTile.AddEdgeAlongDirection(edgeDirection, cost);
-		neighbourTile.AddEdgeAlongDirection((edgeDirection + 2) % BaseEdgesDirection.Num(), cost);
+		currentTile.AddEdgeAlongDirection(edgeDirection, cost + neighbourTile.DefaultCost);
+		neighbourTile.AddEdgeAlongDirection((edgeDirection + 2) % BaseEdgesDirection.Num(), cost + currentTile.DefaultCost);
 	}
 }
 
@@ -603,8 +627,6 @@ void AGridManager::SetupGridArrays()
 
 void AGridManager::DebugPregenerateGameplayGrids()
 {
-	SetupGridArrays();
-
 	if (DebugDisplayTileIndexes)
 		DisplayTileIndexes();
 
@@ -827,6 +849,30 @@ int AGridManager::GetEdgeCostFromZDifference(const float& aStartZ, const float& 
 	return -1;
 }
 
+bool AGridManager::GetNeighbourUsingDirection(const int32& aTileIndex, const int32& aDirection, FBaseTile& outNeighbourTile) const
+{
+	int32 x = GetXComponent(aTileIndex) + BaseEdgesDirection[aDirection].X;
+	int32 y = GetYComponent(aTileIndex) + BaseEdgesDirection[aDirection].Y;
+
+	if (!IsIndexValid(x, y))
+		return false;
+
+	outNeighbourTile = GetTileFromIndex(x * GridSize.X + y);
+	return true;
+}
+
+bool AGridManager::GetNeighbourUsingDirection(const FBaseTile& aTile, const int32& aDirection, FBaseTile& outNeighbourTile) const
+{
+	int32 x = GetXComponent(aTile.TileRef) + BaseEdgesDirection[aDirection].X;
+	int32 y = GetYComponent(aTile.TileRef) + BaseEdgesDirection[aDirection].Y;
+
+	if (!IsIndexValid(x, y))
+		return false;
+
+	outNeighbourTile = GetTileFromIndex(x * GridSize.X + y);
+	return true;
+}
+
 const FVector AGridManager::GetDisplayTileLocationFromIndex(const int32& anIndex, const FIntPoint& aSize) const
 {
 	/* math shenanigans to get the tile location depending on a given index */
@@ -932,6 +978,16 @@ float AGridManager::GetDefaultTileWidth() const
 UStaticMesh* AGridManager::GetDefaultTileMesh() const
 {
 	return DefaultTileMesh;
+}
+
+int32 AGridManager::GetGraphSize() const
+{
+	return GridSize.X * GridSize.Y;
+}
+
+FVector AGridManager::GetTileSize() const
+{
+	return FVector(TileSize.X, TileSize.Y, 0.5f);
 }
 
 #pragma endregion

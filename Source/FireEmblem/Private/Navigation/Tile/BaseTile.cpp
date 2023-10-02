@@ -66,6 +66,46 @@ void FBaseTile::FreeTile()
 	bIsTileBlocked = false;
 }
 
+void FBaseTile::MarkOpen()
+{
+	IsTileOpen = true;
+}
+
+void FBaseTile::MarkNotOpen()
+{
+	IsTileOpen = false;
+}
+
+void FBaseTile::MarkClosed()
+{
+	IsTileClosed = true;
+}
+
+void FBaseTile::MarkNotClosed()
+{
+	IsTileClosed = false;
+}
+
+bool FBaseTile::IsOpened() const
+{
+	return IsTileOpen;
+}
+
+bool FBaseTile::IsClosed() const
+{
+	return IsTileClosed;
+}
+
+const int32 FBaseTile::GetNeighbourCount() const
+{
+	return EdgesCosts.Num();
+}
+
+int32 FBaseTile::GetNeighbourCount()
+{
+	return EdgesCosts.Num();
+}
+
 bool operator==(const FBaseTile& aLeft, const FBaseTile& aRight)
 {
 	return aLeft.TileRef == aRight.TileRef;

@@ -6,9 +6,11 @@
 #include "GameFramework/Pawn.h"
 #include "Enums/FEEnum.h"
 #include "InputAction.h"
+#include "Navigation/Tile/BaseTile.h"
 #include "FECameraPawn.generated.h"
 
 class UCameraComponent;
+class UDecalComponent;
 class UFECameraData;
 class USpringArmComponent;
 
@@ -60,15 +62,18 @@ protected:
 	/* Test if we can zoom in the given direction (-1 for a zoom out and 1 for a zoom in) */
 	bool CanZoom(float aValue);
 
+	/* Update the currently hovered tile by the camera */
+	void UpdateHoverTile();
+
 
 protected:
 
 	/* Camera component */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	TObjectPtr<UCameraComponent> CameraComponent;
 
 	/* Spring arm component */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Camera")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	TObjectPtr<USpringArmComponent> SpringArmComponent;
 
 	/* Camera data */
@@ -80,18 +85,21 @@ protected:
 	EFECameraMode CurrentCameraMode = EFECameraMode::FREE;
 
 	/* Target location of the camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera|Target")
 	FVector TargetLocation;
 
 	/* Targeted rotation of the camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera|Target")
 	FRotator TargetRotation;
 
 	/* Targeted zoom for the camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera|Target")
 	float TargetZoom;
 
 	/* Speed for the zoom */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera|Target")
 	float TargetZoomSpeed;
+
+	/* Currently hovered tile */
+	FBaseTile HoveredTile;
+
+	/* Decal component */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Decal")
+	TObjectPtr<UDecalComponent> DecalComponent;
 };

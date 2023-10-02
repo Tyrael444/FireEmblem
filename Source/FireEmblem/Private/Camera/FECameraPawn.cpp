@@ -4,25 +4,27 @@
 
 #include "Camera/CameraComponent.h"
 #include "Camera/FECameraData.h"
+#include "Components/DecalComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameInstance/FEGameInstance.h"
+#include "Navigation/GridManager.h"
+#include "Navigation/Pathfinding/GenericPathfinder.h"
 
 AFECameraPawn::AFECameraPawn()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Create a camera component with defaults values. So we will be able to use it to set startup values for the spring arm, etc
-	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Top Down Camera"));
-
-	// create our spring arm and fill some default values depending on the camera data
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
 	SpringArmComponent->SetupAttachment(RootComponent);
-	SpringArmComponent->SetUsingAbsoluteRotation(true); // Don't want arm to rotate when character does
-	SpringArmComponent->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
+	SpringArmComponent->SetUsingAbsoluteRotation(true);
+	SpringArmComponent->bDoCollisionTest = false;
 
+	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("Top Down Camera"));
 	CameraComponent->SetupAttachment(SpringArmComponent, USpringArmComponent::SocketName);
-	CameraComponent->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+	CameraComponent->bUsePawnControlRotation = false;
+
+	DecalComponent = CreateDefaultSubobject<UDecalComponent>(TEXT("Decal"));
+	DecalComponent->SetupAttachment(RootComponent);
 }
 
 void AFECameraPawn::BeginPlay()
@@ -75,6 +77,40 @@ bool AFECameraPawn::CanZoom(float aValue)
 	return true;
 }
 
+void AFECameraPawn::UpdateHoverTile()
+{
+	FHitResult hit;
+
+	FVector start = SpringArmComponent->GetComponentLocation();
+	FVector end = start + (GetActorForwardVector() * 2500);
+
+	if (GetWorld()->LineTraceSingleByChannel(hit, start, end, ECollisionChannel::ECC_Camera))
+	{
+		AGridManager* instance = AGridManager::GetInstance();
+
+		int32 index = instance->ConvertLocationToIndex3DNaive(hit.Location);
+		if (!instance->IsIndexValid(index))
+		{
+			return;
+		}
+
+		FBaseTile& tile = instance->GetTileFromIndex(index);
+		if (tile.TileRef != HoveredTile.TileRef)
+		{
+			HoveredTile = tile;
+
+			DecalComponent->SetRelativeLocation(HoveredTile.TileLocation);
+			DecalComponent->DecalSize = instance->GetTileSize() * 0.5f;
+
+			FGenericPathfinder<AGridManager> pathfinder (*AGridManager::GetInstance());
+			TArray<FBaseTile> tiles;
+			FGenericPathfinderQueryFilter filter;
+			filter.MaxDistance = 2;
+			pathfinder.GetTilesInRange(HoveredTile, filter, tiles);
+		}
+	}
+}
+
 void AFECameraPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -85,6 +121,8 @@ void AFECameraPawn::Tick(float DeltaTime)
 	SpringArmComponent->TargetArmLength = FMath::Lerp(SpringArmComponent->TargetArmLength, TargetZoom, DeltaTime * TargetZoomSpeed);
 
 	SpringArmComponent->SetRelativeLocation(FMath::VInterpTo(SpringArmComponent->GetRelativeLocation(), TargetLocation, DeltaTime, CameraData->MovementSpeed));
+
+	UpdateHoverTile();
 }
 
 void AFECameraPawn::MoveCamera(const FInputActionInstance& anInstance)
