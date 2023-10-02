@@ -3,12 +3,12 @@
 
 #include "Navigation/Tile/BaseTile.h"
 
-bool FBaseTile::HasValidEdgeAlongDirection(const int& aDirection) const
+bool FBaseTile::HasValidEdgeAlongDirection(const int32& aDirection) const
 {
 	return (EdgesMask & (1 << aDirection)) != 0;
 }
 
-const int FBaseTile::GetEdgeCostAlongDirection(const int& aDirection) const
+const int FBaseTile::GetEdgeCostAlongDirection(const int32& aDirection) const
 {
 	if (!HasValidEdgeAlongDirection(aDirection))
 		return -1;
@@ -16,7 +16,7 @@ const int FBaseTile::GetEdgeCostAlongDirection(const int& aDirection) const
 	return EdgesCosts[aDirection];
 }
 
-void FBaseTile::AddEdgeAlongDirection(const int& aDirection, const int& anEdgeCost /*= 1*/, bool bShouldModifyIsAlreadyExisting /*= false*/)
+void FBaseTile::AddEdgeAlongDirection(const int32& aDirection, const int32& anEdgeCost /*= 1*/, bool bShouldModifyIsAlreadyExisting /*= false*/)
 {
 	if (HasValidEdgeAlongDirection(aDirection))
 	{
@@ -30,7 +30,7 @@ void FBaseTile::AddEdgeAlongDirection(const int& aDirection, const int& anEdgeCo
 	EdgesCosts.Add(aDirection, anEdgeCost);
 }
 
-bool FBaseTile::RemoveEdgeAlongDirection(const int& aDirection)
+bool FBaseTile::RemoveEdgeAlongDirection(const int32& aDirection)
 {
 	if (!HasValidEdgeAlongDirection(aDirection))
 		return false;
@@ -41,7 +41,7 @@ bool FBaseTile::RemoveEdgeAlongDirection(const int& aDirection)
 	return true;
 }
 
-bool FBaseTile::ModifyEdgeCost(const int& aDirection, const int& aNewCost)
+bool FBaseTile::ModifyEdgeCost(const int32& aDirection, const int32& aNewCost)
 {
 	if (!HasValidEdgeAlongDirection(aDirection))
 		return false;
@@ -68,5 +68,5 @@ void FBaseTile::FreeTile()
 
 bool operator==(const FBaseTile& aLeft, const FBaseTile& aRight)
 {
-	return aLeft.GridIndex == aRight.GridIndex;
+	return aLeft.TileRef == aRight.TileRef;
 }

@@ -30,6 +30,10 @@ class FIREEMBLEM_API AGridManager : public AActor
 
 public:
 
+	/* defines this type as it is used by the generic A* implementation */
+	typedef int FTileRef;
+
+
 	/* Singleton access method */
 	UFUNCTION(BlueprintCallable)
 	static AGridManager* GetInstance();
@@ -51,30 +55,30 @@ public:
 	* If GridLocations has been created, generally use it instead
 	*/
 	UFUNCTION(BlueprintCallable)
-	virtual const FVector GetDisplayTileLocationFromIndex(const int& anIndex, const FIntPoint& aSize) const;
+	virtual const FVector GetDisplayTileLocationFromIndex(const int32& anIndex, const FIntPoint& aSize) const;
 
 	/* Returns all grid indexes in a specified rectangular area and offset by a specified grid index.
 	* Purely math based and does not use any generated grid data
 	*/
 	UFUNCTION(BlueprintCallable)
-	virtual TArray<int> GetAllGridIndexesNaive(const int aStartIndex, const FIntPoint& aGridSize);
+	virtual TArray<int32> GetAllGridIndexesNaive(const int32& aStartIndex, const FIntPoint& aGridSize);
 
 	/* Math expression to convert a tile index to a world location */
 	UFUNCTION(BlueprintCallable)
-	virtual FVector ConvertTileIndexToLocationNaive(const int aGridIndex) const;
+	virtual FVector ConvertTileIndexToLocationNaive(const int32& aGridIndex) const;
 
 	/* Convert a grid location to a world one using the grid manager transform */
 	UFUNCTION(BlueprintCallable)
 	virtual FVector ConvertGridLocationToWorld(const FVector& aGridLocation) const;
 
 	/* Convert a grid location to a world one using the grid manager transform */
-	virtual FVector ConvertGridLocationToWorld(const float aX, const float aY, const float aZ) const;
+	virtual FVector ConvertGridLocationToWorld(const float& aX, const float& aY, const float& aZ) const;
 
 	/* Gets a location and finds the closest corresponding location
 	* Does not take overlapping tiles into account
 	*/
 	UFUNCTION(BlueprintCallable)
-	virtual int ConvertLocationToIndex3DNaive(const FVector& aLocation) const;
+	virtual int32 ConvertLocationToIndex3DNaive(const FVector& aLocation) const;
 
 	/* Converts a world location to a grid one */
 	UFUNCTION(BlueprintCallable)
@@ -86,15 +90,15 @@ public:
 
 	/* Fires a line trace between two tiles, return if there is a hit */
 	UFUNCTION(BlueprintCallable)
-	virtual bool TraceOnGrid(const int& aStartIndex, const int& aTargetIndex, const ETraceTypeQuery& aTraceChannel, const float& aTraceHeight) const;
+	virtual bool TraceOnGrid(const int32& aStartIndex, const int32& aTargetIndex, const ETraceTypeQuery& aTraceChannel, const float& aTraceHeight) const;
 
 	/* Returns the world location at an index, with an offset on the Z axis */
 	UFUNCTION(BlueprintCallable)
-	virtual bool GetOffsetedWorldLocationAtIndex(const int& aGridIndex, const float& anOffset, FVector& outWorldLocation) const;
+	virtual bool GetOffsetedWorldLocationAtIndex(const int32& aGridIndex, const float& anOffset, FVector& outWorldLocation) const;
 
 	/* Return if the grid contains a specific tile, searching by index */
 	UFUNCTION(BlueprintCallable)
-	virtual bool ContainsTile(const int& aTileIndex) const;
+	virtual bool ContainsTile(const int32& aTileIndex) const;
 
 	/* Return if the grid contains a specific tile */
 	virtual bool ContainsTile(const FBaseTile& aTile) const;
@@ -103,15 +107,15 @@ public:
 	* It will assume that the index is in the grid, please before calling it, ensure that the index is valid
 	*/
 	UFUNCTION(BlueprintCallable)
-	virtual FBaseTile& GetTileFromIndex(const int& anIndex);
+	virtual FBaseTile& GetTileFromIndex(const int32& anIndex);
 
 	/* const version */
-	virtual const FBaseTile& GetTileFromIndex(const int& anIndex) const;
+	virtual const FBaseTile& GetTileFromIndex(const int32& anIndex) const;
 
 	/* Returns if a specific index is linked to a tile in the grid */
 	UFUNCTION(BlueprintCallable)
-	virtual bool IsIndexValid(const int& anIndex) const;
-	virtual bool IsIndexValid(const int& aX, const int& aY) const;
+	virtual bool IsIndexValid(const int32& anIndex) const;
+	virtual bool IsIndexValid(const int32& aX, const int32& aY) const;
 
 	/* Compares height difference of two tiles. Returns the appropriate edge cost between them based on the values specified. 
 	* If the difference is larger than the HeightImpassableCutoff, returns -1 (indicating that the edge should be removed).
@@ -209,25 +213,21 @@ protected:
 
 	/* Create the vector grids that form the basis of moving between grid array indexes and world locations */
 	UFUNCTION(BlueprintCallable)
-	virtual bool CreateGridLocations(const int aStartIndex, const FIntPoint& aGridSize, const EGridHeight& aHeightType, bool bShouldPrintOnFailure = true);
+	virtual bool CreateGridLocations(const int32& aStartIndex, const FIntPoint& aGridSize, const EGridHeight& aHeightType, bool bShouldPrintOnFailure = true);
 
 	/* Create the vector grid without any height consideration */
 	UFUNCTION(BlueprintCallable)
-	virtual bool CreateNoHeightLocations(const int aStartIndex, const FIntPoint& aGridSize, bool bShouldPrintOnFailure = true);
+	virtual bool CreateNoHeightLocations(const int32& aStartIndex, const FIntPoint& aGridSize, bool bShouldPrintOnFailure = true);
 
 	/* Create the vector grid with a single level height */
 	UFUNCTION(BlueprintCallable)
-	virtual bool CreateSingleLevelLocations(const int aStartIndex, const FIntPoint& aGridSize, bool bShouldPrintOnFailure = true);
+	virtual bool CreateSingleLevelLocations(const int32& aStartIndex, const FIntPoint& aGridSize, bool bShouldPrintOnFailure = true);
 
 	/* Create the vector grid for multiple level heights.
 	* This will depend on the Min/Max heights set
 	*/
 	UFUNCTION(BlueprintCallable)
-	virtual bool CreateMultiLevelLocations(const int aStartIndex, const FIntPoint& aGridSize, bool bShouldPrintOnFailure = true);
-
-	/* Loops through all subgrids placed in the world and adds them to the grid managers locations */
-	UFUNCTION(BlueprintCallable)
-	virtual void AddSubgrids();
+	virtual bool CreateMultiLevelLocations(const int32& aStartIndex, const FIntPoint& aGridSize, bool bShouldPrintOnFailure = true);
 
 	/* Generates all grid edges, determining what tiles can be moved between and the movement cost for each edge */
 	UFUNCTION(BlueprintCallable)
@@ -245,15 +245,15 @@ protected:
 	* Heightmap = multilevel: Keeps tracing after first hit, adding more levels to the locations map when found until outside MinHeight 
 	*/
 	UFUNCTION(BlueprintCallable)
-	virtual void CreateLocationsAndHeightmap(const int aGridIndex, const FVector& aLocation);
+	virtual void CreateLocationsAndHeightmap(const int32& aGridIndex, const FVector& aLocation);
 
 	/* Creates an array that holds all levels stored at the different grid indexes for easy lookup */
 	UFUNCTION(BlueprintCallable)
-	virtual void UpdateHeightmapCache(const int aGridIndex);
+	virtual void UpdateHeightmapCache(const int32& aGridIndex);
 
 	/* Filles the BaseEdges array with the appropriate relative indexes of neighbor tiles */
 	UFUNCTION(BlueprintCallable)
-	virtual TArray<FIntPoint> SetupBaseEdges();
+	virtual TArray<FIntPoint>& SetupBaseEdges();
 
 	/* Pregenerate Gameplay Grids: Generates some of the grids used for gameplay in the construction scripts so they won't have to load during the BeginPlay.
 	* Speeds up startup, but slows down the construction script. 
@@ -264,13 +264,13 @@ protected:
 
 	/* Adds edges from a tile to neighboring tiles for flat grids */
 	UFUNCTION(BlueprintCallable)
-	virtual void AddTileEdgesNoHeightmap(const int& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError = true);
+	virtual void AddTileEdgesNoHeightmap(const int32& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError = true);
 
 	UFUNCTION(BlueprintCallable)
-	virtual void AddTileEdgesOneLevelHeightmap(const int& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError = true);
+	virtual void AddTileEdgesOneLevelHeightmap(const int32& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError = true);
 
 	UFUNCTION(BlueprintCallable)
-	virtual void AddTileEdgesMultiLevelHeightmap(const int& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError = true);
+	virtual void AddTileEdgesMultiLevelHeightmap(const int32& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError = true);
 
 
 	/********
@@ -279,15 +279,15 @@ protected:
 
 	/* Takes a grid index (containing XYZ) and returns the X index */
 	UFUNCTION(BlueprintCallable)
-	virtual const int GetXComponent(const int& aGridIndex) const;
+	virtual const int GetXComponent(const int32& aGridIndex) const;
 
 	/* Takes a grid index (containing XYZ) and returns the Y index */
 	UFUNCTION(BlueprintCallable)
-	virtual const int GetYComponent(const int& aGridIndex) const;
+	virtual const int GetYComponent(const int32& aGridIndex) const;
 
 	/* Takes a grid index (containing XYZ) and returns the Z index */
 	UFUNCTION(BlueprintCallable)
-	virtual const int GetZComponent(const int& aGridIndex) const;
+	virtual const int GetZComponent(const int32& aGridIndex) const;
 
 
 	/********
@@ -319,7 +319,7 @@ private:
 	AGridManager();
 
 	/* Recursive function use for this CreateLocationsAndHeightmap */
-	void CreateLocationsAndHeightmap_Recursive(const int aGridIndex, FVector& aTraceStart, FVector& aTraceEnd, FVector& aLastHitPosition);
+	void CreateLocationsAndHeightmap_Recursive(const int32& aGridIndex, FVector& aTraceStart, FVector& aTraceEnd, FVector& aLastHitPosition);
 
 
 protected:

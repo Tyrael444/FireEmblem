@@ -9,7 +9,7 @@
 /**
  * Default tile used by the grid logic and generic A*
  */
-USTRUCT(BlueprintType)
+USTRUCT(Blueprintable)
 struct FBaseTile
 {
 	GENERATED_BODY()
@@ -19,27 +19,27 @@ struct FBaseTile
 	********/
 
 	/* Returns if this tile has a valid connection along a specific direction */
-	bool HasValidEdgeAlongDirection(const int& aDirection) const;
+	bool HasValidEdgeAlongDirection(const int32& aDirection) const;
 
 	/* Returns the cost of a specific edge. 
 	* If there is no connection in the specified direction, returns -1
 	*/
-	const int GetEdgeCostAlongDirection(const int& aDirection) const;
+	const int GetEdgeCostAlongDirection(const int32& aDirection) const;
 
 	/* Add a new edge along a specific direction, with a default cost of 1
 	* If the edge was already created, can modify the cost by setting bShouldModifyIsAlreadyExisting to true
 	*/
-	void AddEdgeAlongDirection(const int& aDirection, const int& anEdgeCost = 1, bool bShouldModifyIsAlreadyExisting = false);
+	void AddEdgeAlongDirection(const int32& aDirection, const int32& anEdgeCost = 1, bool bShouldModifyIsAlreadyExisting = false);
 
 	/* Removes an edge from the tile (depending on the direction) 
 	* Returns if the edge was successfully removed (meaning that it went from valid to invalid)
 	*/
-	bool RemoveEdgeAlongDirection(const int& aDirection);
+	bool RemoveEdgeAlongDirection(const int32& aDirection);
 
 	/* Modify the cost of a specific edge.
 	* Return true if the cost was successfully modified (first, the connection needs to be valid)
 	*/
-	bool ModifyEdgeCost(const int& aDirection, const int& aNewCost);
+	bool ModifyEdgeCost(const int32& aDirection, const int32& aNewCost);
 
 	/* Returns if the tile is blocked or not */
 	bool IsTileBlocked() const;
@@ -62,17 +62,19 @@ struct FBaseTile
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FVector TileLocation = FVector();
 
-	/* Index of the tile in the grid */
+	/* Index of the tile in the grid.
+	* Is used by the generic A* implementation
+	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int GridIndex = 0;
+	int32 TileRef = 0;
 
 	/* Mask defining the tile connections */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int EdgesMask = 0;
+	int32 EdgesMask = 0;
 
 	/* Map defining the cost for each edge (if there is a connection) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TMap<int, int> EdgesCosts;
+	TMap<int32, int32> EdgesCosts;
 
 	/* List of effects related to the tile.
 	* Could be empty, and need to find a way to properly ensure that effects can match together
