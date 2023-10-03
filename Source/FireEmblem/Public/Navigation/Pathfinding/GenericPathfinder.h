@@ -23,7 +23,7 @@ struct FGenericPathfinderPolicy
 
 struct FGenericPathfinderQueryFilter
 {
-	int32 GetMaxDistance()
+	int32 GetMaxDistance() const
 	{
 		return MaxDistance;
 	}
@@ -45,6 +45,11 @@ struct FIREEMBLEM_API FGenericPathfinder
 		{
 			return aA.TotalCost < aB.TotalCost;
 		}
+
+		bool operator() (TSearchTile& aA, TSearchTile& aB)
+		{
+			return aA.TotalCost < aB.TotalCost;
+		}
 	};
 
 	struct FPriorityQueue : FTileArray
@@ -58,24 +63,84 @@ struct FIREEMBLEM_API FGenericPathfinder
 		{
 		}
 
-		void Push(TSearchTile& aSearchTile)
+		void Push(const TSearchTile& aSearchTile)
 		{
-			Super::HeapPush(aSearchTile, TileSorter);
+			//Super::HeapPush(aSearchTile, TileSorter);
+			Super::HeapPush(aSearchTile, [aSearchTile](const TSearchTile&, const TSearchTile& aTile) {
+				return aSearchTile.TotalCost < aTile.TotalCost; });
 		}
 
-		TSearchTile& Pop()
+		TSearchTile Pop()
 		{
 			check(Super::Num() > 0);
-			TSearchTile& tile;
-			Super::HeapPop(tile, TileSorter, false);
+			TSearchTile tile;
+			//Super::HeapPop(tile, TileSorter, false);
+			Super::HeapPop(tile, [](const TSearchTile& aA, const TSearchTile& aB) {
+				return aA.TotalCost < aB.TotalCost;
+				}, false);
 			return tile;
 		}
 	};
 
 	template<typename TGraph>
 	FGenericPathfinder(const TGraph& aGraph)
-		: Graph(aGraph)
+		: Graph(aGraph), PriorityQueue(TileSorter)
 	{
+	}
+
+	/* Uses a Djikstra to find all the tiles in a given range, starting from aStartTile */
+	template<typename TQueryFilter, typename TResultTiles = TArray<TSearchTile>>
+	void GetTilesInRange(const TSearchTile& aStartTile, const TQueryFilter& aFilter, TResultTiles& outTilesInRange)
+	{
+		GENERIC_PATHFINDER_LOG(Display, TEXT(""));
+		GENERIC_PATHFINDER_LOG(Display, TEXT("Starting GetTilesInRange request..."));
+
+		if (!Graph.ContainsTile(aStartTile))
+		{
+			GENERIC_PATHFINDER_LOG(Error, TEXT("Graph doesn't contain the starting tile"));
+			return;
+		}
+
+		TMap<TSearchTile, int> distance;
+		distance.Add(aStartTile, 0);
+		PriorityQueue.Push(aStartTile);
+
+		while (!PriorityQueue.IsEmpty())
+		{
+			TSearchTile currentTile = PriorityQueue.Pop();
+			int32 currentDistance = currentTile.TotalCost;
+
+			if (currentDistance > aFilter.GetMaxDistance())
+				break;
+
+			for (int direction = 0; direction < currentTile.GetNeighbourCount(); ++direction)
+			{
+				int cost = currentTile.GetEdgeCostAlongDirection(direction);
+				int neighbourDistance = currentDistance + cost;
+				TSearchTile neighbourTile;
+				bool res = Graph.GetNeighbourUsingDirection(currentTile.TileRef, direction, neighbourTile);
+				if (!res)
+					continue;
+
+				if (!distance.Contains(neighbourTile) || neighbourDistance < distance[neighbourTile])
+				{
+					if (distance.Contains(neighbourTile))
+						distance[neighbourTile] = neighbourDistance;
+					else
+						distance.Add(neighbourTile, neighbourDistance);
+
+					neighbourTile.ParentTileRef = currentTile.TileRef;
+					neighbourTile.TotalCost = neighbourDistance;
+					PriorityQueue.Push(neighbourTile);
+				}
+			}
+		}
+
+		for (auto& pair : distance)
+		{
+			if (pair.Value <= aFilter.GetMaxDistance())
+				outTilesInRange.Add(pair.Key);
+		}
 	}
 
 	/* Runs an A* to find a path from aStartTile to anEndTile */
@@ -114,61 +179,13 @@ struct FIREEMBLEM_API FGenericPathfinder
 		return result;
 	}
 
-	/* Uses a Djikstra to find all the tiles in a given range, starting from aStartTile */
-	template<typename TQueryFilter, typename TResultTiles = TArray<TSearchTile>>
-	void GetTilesInRange(const TSearchTile& aStartTile, const TQueryFilter& aFilter, TResultTiles& outTilesInRange)
-	{
-		GENERIC_PATHFINDER_LOG(Display, TEXT(""));
-		GENERIC_PATHFINDER_LOG(Display, TEXT("Starting GetTilesInRange request..."));
-
-		if (!Graph.ContainsTile(aStartTile))
-		{
-			GENERIC_PATHFINDER_LOG(Error, TEXT("Graph doesn't contain the starting tile"));
-			return;
-		}
-
-		/*TMap<TSearchTile, int> distance;
-		FPriorityQueue queue;
-		distance.Add(aStartTile, 0);
-		queue.Push(aStartTile);
-
-		while (!queue.IsEmpty())
-		{
-			TSearchTile& currentTile = queue.Pop();
-			int32 currentDistance = currentTile.TotalCost;
-
-			if (currentDistance > aFilter.GetMaxDistance())
-				break;
-
-			for (int direction = 0; direction < currentTile.GetNeighbourCount(); ++i)
-			{
-				int cost = currentTile.GetEdgeCostAlongDirection(direction);
-				int neighbourDistance = currentDistance + cost;
-				TSearchTile neighbourTile;
-				bool res = Graph.GetNeighbourUsingDirection(currentTile.TileRef, direction, neighbourTile);
-				if (!res)
-					continue;
-
-				if (!distance.Contains(neighbourTile) || neighbourDistance < distance[neighbourTile])
-				{
-					distance[neighbourTile] = neighbourDistance;
-					neighbourTile.ParentTileRef = currentTile.TileRef;
-					queue.Push(neighbourTile);
-				}
-			}
-		}
-
-		for (auto& pair : distance)
-		{
-			if (pair.Value <= aFilter.GetMaxDistance())
-				outTilesInRange.Add(pair.Key);
-		}*/
-	}
-
 
 	/********
 	* Members
 	********/
 
 	const TGraph& Graph;
+
+	FPriorityQueue PriorityQueue;
+	FTileSorter TileSorter;
 };

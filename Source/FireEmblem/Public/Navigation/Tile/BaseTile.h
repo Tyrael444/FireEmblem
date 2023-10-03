@@ -19,6 +19,10 @@ struct FBaseTile
 	{
 	}
 
+	~FBaseTile()
+	{
+	}
+
 	/********
 	* Utility
 	********/
@@ -34,7 +38,7 @@ struct FBaseTile
 	/* Add a new edge along a specific direction, with a default cost of 1
 	* If the edge was already created, can modify the cost by setting bShouldModifyIsAlreadyExisting to true
 	*/
-	void AddEdgeAlongDirection(const int32& aDirection, const int32& anEdgeCost = 1, bool bShouldModifyIsAlreadyExisting = false);
+	void AddEdgeAlongDirection(const int32& aDirection, const int32& anEdgeCost = 1);
 
 	/* Removes an edge from the tile (depending on the direction) 
 	* Returns if the edge was successfully removed (meaning that it went from valid to invalid)
@@ -75,6 +79,7 @@ struct FBaseTile
 
 	/* Simple operator to know if 2 tiles are equals, mostly used by the grid manager */
 	friend bool operator== (const FBaseTile& aLeft, const FBaseTile& aRight);
+	bool operator== (const FBaseTile& anOther);
 
 
 	/********
@@ -131,3 +136,9 @@ struct FBaseTile
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	uint8 IsTileClosed : 1;
 };
+
+FORCEINLINE uint32 GetTypeHash(const FBaseTile& MidiTime)
+{
+	uint32 Hash = FCrc::MemCrc32(&MidiTime, sizeof(FBaseTile));
+	return Hash;
+}

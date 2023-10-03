@@ -16,16 +16,8 @@ const int FBaseTile::GetEdgeCostAlongDirection(const int32& aDirection) const
 	return EdgesCosts[aDirection];
 }
 
-void FBaseTile::AddEdgeAlongDirection(const int32& aDirection, const int32& anEdgeCost /*= 1*/, bool bShouldModifyIsAlreadyExisting /*= false*/)
+void FBaseTile::AddEdgeAlongDirection(const int32& aDirection, const int32& anEdgeCost /*= 1*/)
 {
-	if (HasValidEdgeAlongDirection(aDirection))
-	{
-		if (bShouldModifyIsAlreadyExisting)
-			EdgesCosts[aDirection] = anEdgeCost;
-
-		return;
-	}
-
 	EdgesMask |= (1 << aDirection);
 	EdgesCosts.Add(aDirection, anEdgeCost);
 }
@@ -104,6 +96,11 @@ const int32 FBaseTile::GetNeighbourCount() const
 int32 FBaseTile::GetNeighbourCount()
 {
 	return EdgesCosts.Num();
+}
+
+bool FBaseTile::operator==(const FBaseTile& anOther)
+{
+	return TileRef == anOther.TileRef;
 }
 
 bool operator==(const FBaseTile& aLeft, const FBaseTile& aRight)

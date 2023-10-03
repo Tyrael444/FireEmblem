@@ -494,7 +494,7 @@ TArray<FIntPoint>& AGridManager::SetupBaseEdges()
 {
 	BaseEdgesDirection.Empty();
 
-	/* defines the 4 base direction (right, down, left, up) */
+	/* defines the 4 base direction (up, left, down, right) */
 	BaseEdgesDirection.Add(FIntPoint(1, 0));
 	BaseEdgesDirection.Add(FIntPoint(0, -1));
 	BaseEdgesDirection.Add(FIntPoint(-1, 0));
@@ -564,17 +564,15 @@ void AGridManager::AddTileEdgesNoHeightmap(const int32& aGridIndex, bool bShould
 	{
 		int32 x = GetXComponent(aGridIndex) + BaseEdgesDirection[edge].X;
 		int32 y = GetYComponent(aGridIndex) + BaseEdgesDirection[edge].Y;
-		if (!IsIndexValid(x, y) || currentTile.HasValidEdgeAlongDirection(edge))
+		if (!IsIndexValid(x, y))
 			continue;
 
-		int32 neighbourIndex = x * GridSize.X + y;
+		int32 neighbourIndex = (x * GridSize.Y) + y;
 		if (bShouldTraceForWalls && TraceOnGrid(aGridIndex, neighbourIndex, WallTraceChannel, WallTraceHeight))
 			continue;
 
 		FBaseTile& neighbourTile = GetTileFromIndex(neighbourIndex);
 		currentTile.AddEdgeAlongDirection(edge, neighbourTile.DefaultCost + 1);
-		neighbourTile.AddEdgeAlongDirection((edge + 2) % BaseEdgesDirection.Num(), currentTile.DefaultCost + 1);
-
 	}
 }
 
@@ -587,7 +585,7 @@ void AGridManager::AddTileEdgesOneLevelHeightmap(const int32& aGridIndex, bool b
 	{
 		int32 x = GetXComponent(aGridIndex) + BaseEdgesDirection[edgeDirection].X;
 		int32 y = GetYComponent(aGridIndex) + BaseEdgesDirection[edgeDirection].Y;
-		if (!IsIndexValid(x, y) || currentTile.HasValidEdgeAlongDirection(edgeDirection))
+		if (!IsIndexValid(x, y))
 			continue;
 
 		int32 neighbourIndex = x * GridSize.X + y;
@@ -604,7 +602,6 @@ void AGridManager::AddTileEdgesOneLevelHeightmap(const int32& aGridIndex, bool b
 
 		/* sets for both tiles that there is a valid connection in the corresponding direction */
 		currentTile.AddEdgeAlongDirection(edgeDirection, cost + neighbourTile.DefaultCost);
-		neighbourTile.AddEdgeAlongDirection((edgeDirection + 2) % BaseEdgesDirection.Num(), cost + currentTile.DefaultCost);
 	}
 }
 
@@ -888,7 +885,7 @@ TArray<int32> AGridManager::GetAllGridIndexesNaive(const int32& aStartIndex, con
 		for (int j = 0; j < aGridSize.Y; ++j)
 		{
 			/* The start index will act as an offset in that case */
-			ret.Add((i * GridSize.X) + j + aStartIndex);
+			ret.Add((i * GridSize.Y) + j + aStartIndex);
 		}
 	}
 

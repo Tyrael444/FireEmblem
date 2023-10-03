@@ -107,6 +107,11 @@ void AFECameraPawn::UpdateHoverTile()
 			FGenericPathfinderQueryFilter filter;
 			filter.MaxDistance = 2;
 			pathfinder.GetTilesInRange(HoveredTile, filter, tiles);
+
+			for (auto inRange : tiles)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, ("tile in range : ") + FString::FromInt(inRange.TileRef));
+			}
 		}
 	}
 }
