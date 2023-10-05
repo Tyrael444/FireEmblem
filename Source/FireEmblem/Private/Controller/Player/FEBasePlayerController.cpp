@@ -2,14 +2,15 @@
 
 
 #include "Controller/Player/FEBasePlayerController.h"
+#include "Camera/FECameraPawn.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
-#include "Camera/FECameraPawn.h"
 
 AFEBasePlayerController::AFEBasePlayerController()
 {
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
+	bShowMouseCursor = false;
 }
 
 TObjectPtr<AFECameraPawn> AFEBasePlayerController::GetCameraPawn() const
@@ -19,10 +20,9 @@ TObjectPtr<AFECameraPawn> AFEBasePlayerController::GetCameraPawn() const
 
 void AFEBasePlayerController::BeginPlay()
 {
-	// Call the base class  
 	Super::BeginPlay();
+	bShowMouseCursor = false;
 
-	//Add Input Mapping Context
 	if (UEnhancedInputLocalPlayerSubsystem* inputSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		for (int i = 0; i < PossibleContext.Num(); ++i)
@@ -38,13 +38,17 @@ void AFEBasePlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();	
 	
-	// Set up action bindings
 	if (UEnhancedInputComponent* enhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent))
 	{
 		enhancedInputComponent->BindAction(MoveCameraAction, ETriggerEvent::Triggered, this, &AFEBasePlayerController::MoveCamera);
 		enhancedInputComponent->BindAction(RotateCameraAction, ETriggerEvent::Triggered, this, &AFEBasePlayerController::RotateCamera);
 		enhancedInputComponent->BindAction(CameraZoomAction, ETriggerEvent::Triggered, this, &AFEBasePlayerController::CameraZoom);
 	}
+}
+
+void AFEBasePlayerController::Tick(float aDeltaTime)
+{
+	Super::Tick(aDeltaTime);
 }
 
 void AFEBasePlayerController::MoveCamera(const FInputActionInstance& anInstance)

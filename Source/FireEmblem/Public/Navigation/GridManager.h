@@ -132,6 +132,9 @@ public:
 	virtual bool GetNeighbourUsingDirection(const int32& aTileIndex, const int32& aDirection, FBaseTile& outNeighbourTile) const;
 	virtual bool GetNeighbourUsingDirection(const FBaseTile& aTile, const int32& aDirection, FBaseTile& outNeighbourTile) const;
 
+	UFUNCTION(BlueprintCallable)
+	virtual void UpdateHoveredTile(const FVector& aCameraLocation);
+
 
 	/********
 	* Accessors
@@ -164,6 +167,24 @@ public:
 	/* Returns the tile size */
 	UFUNCTION(BlueprintCallable)
 	FVector GetTileSize() const;
+
+	/* Return the hovered tile ref */
+	UFUNCTION(BlueprintCallable)
+	const int32& GetHoveredTileRef() const;
+	int32& GetHoveredTileRef();
+
+	/* return the hovered tile */
+	UFUNCTION(BlueprintCallable)
+	const FBaseTile& GetHoveredTile() const;
+	FBaseTile& GetHoveredTile();
+
+
+	/********
+	* Debug
+	********/
+
+	/* Simulate hovering a character and show the tiles in the hovered tile range */
+	void Debug_ForceGetTilesInRange(int32 aRange);
 
 
 protected:
@@ -535,6 +556,21 @@ protected:
 	/* Grid size on the Z axis */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Derived")
 	int GridSizeZ = 0;
+
+	/* Index of the tile currently hovered */
+	int32 HoveredTileRef;
+
+	/* Color that will be used to display the attack range on the tiles */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Tile Display")
+	FLinearColor AttackRange;
+
+	/* Color that will be used to display the movement range on the tiles */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Tile Display")
+	FLinearColor MovementRange;
+
+	/* Default Tile color */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Tile Display")
+	FLinearColor DefaultTileColor;
 
 private:
 

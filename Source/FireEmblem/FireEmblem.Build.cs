@@ -21,6 +21,7 @@ public class FireEmblem : ModuleRules
 			"EnhancedInput", 
 			"GameplayAbilities", 
 			"GameplayTags",
-			"GameplayTasks" });
+			"GameplayTasks",
+			"UMG" });
     }
 }

@@ -8,6 +8,7 @@
 #include "Components/TextRenderComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Navigation/Pathfinding/GenericPathfinder.h"
 #include "Navigation/Tile/BaseTile.h"
 
 #pragma optimize("", off)
@@ -870,6 +871,15 @@ bool AGridManager::GetNeighbourUsingDirection(const FBaseTile& aTile, const int3
 	return true;
 }
 
+void AGridManager::UpdateHoveredTile(const FVector& aCameraLocation)
+{
+	int32 index = ConvertLocationToIndex3DNaive(aCameraLocation);
+	if (!IsIndexValid(index))
+		return;
+
+	HoveredTileRef = index;
+}
+
 const FVector AGridManager::GetDisplayTileLocationFromIndex(const int32& anIndex, const FIntPoint& aSize) const
 {
 	/* math shenanigans to get the tile location depending on a given index */
@@ -985,6 +995,47 @@ int32 AGridManager::GetGraphSize() const
 FVector AGridManager::GetTileSize() const
 {
 	return FVector(TileSize.X, TileSize.Y, 0.5f);
+}
+
+const int32& AGridManager::GetHoveredTileRef() const
+{
+	return HoveredTileRef;
+}
+
+int32& AGridManager::GetHoveredTileRef()
+{
+	return HoveredTileRef;
+}
+
+const FBaseTile& AGridManager::GetHoveredTile() const
+{
+	return GetTileFromIndex(HoveredTileRef);
+}
+
+FBaseTile& AGridManager::GetHoveredTile()
+{
+	return GetTileFromIndex(HoveredTileRef);
+}
+
+#pragma endregion
+
+#pragma region Debug
+
+void AGridManager::Debug_ForceGetTilesInRange(int32 aRange)
+{
+	FGenericPathfinder<AGridManager> pathfinder(*AGridManager::GetInstance());
+	FGenericPathfinderQueryFilter queryFilter;
+	queryFilter.MaxDistance = aRange;
+	TArray<FBaseTile> tilesInRange;
+	pathfinder.GetTilesInRange(GetHoveredTile(), queryFilter, tilesInRange);
+
+	for (auto tile : tilesInRange)
+	{
+		DefaultTile->SetCustomDataValue(tile.TileRef, 0, AttackRange.R);
+		DefaultTile->SetCustomDataValue(tile.TileRef, 1, AttackRange.G);
+		DefaultTile->SetCustomDataValue(tile.TileRef, 2, AttackRange.B);
+		DefaultTile->SetCustomDataValue(tile.TileRef, 3, 0.5f, true);
+	}
 }
 
 #pragma endregion

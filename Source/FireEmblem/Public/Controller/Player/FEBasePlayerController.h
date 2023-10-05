@@ -13,6 +13,7 @@ class AGridNavMesh;
 class UFECameraComponent;
 class UInputMappingContext;
 class USpringArmComponent;
+class UUserWidget;
 
 USTRUCT(BlueprintType)
 struct FFEMappingContext
@@ -57,6 +58,8 @@ public:
 
 	/* Setup the input component */
 	virtual void SetupInputComponent() override;
+
+	virtual void Tick(float aDeltaTime) override;
 
 
 	/********

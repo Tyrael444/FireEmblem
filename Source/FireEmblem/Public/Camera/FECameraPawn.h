@@ -10,7 +10,6 @@
 #include "FECameraPawn.generated.h"
 
 class UCameraComponent;
-class UDecalComponent;
 class UFECameraData;
 class USpringArmComponent;
 
@@ -63,7 +62,7 @@ protected:
 	bool CanZoom(float aValue);
 
 	/* Update the currently hovered tile by the camera */
-	void UpdateHoverTile();
+	void UpdateHoveredTile();
 
 
 protected:
@@ -95,11 +94,4 @@ protected:
 
 	/* Speed for the zoom */
 	float TargetZoomSpeed;
-
-	/* Currently hovered tile */
-	FBaseTile HoveredTile;
-
-	/* Decal component */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Decal")
-	TObjectPtr<UDecalComponent> DecalComponent;
 };
