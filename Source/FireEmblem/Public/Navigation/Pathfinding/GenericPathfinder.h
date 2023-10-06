@@ -73,17 +73,20 @@ struct FIREEMBLEM_API FGenericPathfinder
 		TSearchTile Pop()
 		{
 			check(Super::Num() > 0);
+
 			TSearchTile tile;
 			//Super::HeapPop(tile, TileSorter, false);
+
 			Super::HeapPop(tile, [](const TSearchTile& aA, const TSearchTile& aB) {
 				return aA.TotalCost < aB.TotalCost;
 				}, false);
+
 			return tile;
 		}
 	};
 
 	template<typename TGraph>
-	FGenericPathfinder(const TGraph& aGraph)
+	FGenericPathfinder(TGraph& aGraph)
 		: Graph(aGraph), PriorityQueue(TileSorter)
 	{
 	}
@@ -101,6 +104,9 @@ struct FIREEMBLEM_API FGenericPathfinder
 			return;
 		}
 
+		/* Reset all tiles cost */
+		Graph.ResetAllTiles();
+
 		TMap<TSearchTile, int> distance;
 		distance.Add(aStartTile, 0);
 		PriorityQueue.Push(aStartTile);
@@ -108,27 +114,25 @@ struct FIREEMBLEM_API FGenericPathfinder
 		while (!PriorityQueue.IsEmpty())
 		{
 			TSearchTile currentTile = PriorityQueue.Pop();
-			int32 currentDistance = currentTile.TotalCost;
+			int currentDistance = currentTile.TotalCost;
 
 			if (currentDistance > aFilter.GetMaxDistance())
 				break;
 
-			for (int direction = 0; direction < currentTile.GetNeighbourCount(); ++direction)
+			/* no tiles should have no neighbours, they should have been removed from the grid earlier */
+			check(currentTile.GetNeighbourCount() > 0);
+
+			for (auto& direction : currentTile.GetNeighboursDirections())
 			{
 				int cost = currentTile.GetEdgeCostAlongDirection(direction);
 				int neighbourDistance = currentDistance + cost;
-				TSearchTile neighbourTile;
-				bool res = Graph.GetNeighbourUsingDirection(currentTile.TileRef, direction, neighbourTile);
-				if (!res)
-					continue;
+
+				/* do we need to test for a valid neighbour ? */
+				TSearchTile& neighbourTile = Graph.GetNeighbourUsingDirection_Unsafe(currentTile.TileRef, direction);
 
 				if (!distance.Contains(neighbourTile) || neighbourDistance < distance[neighbourTile])
 				{
-					if (distance.Contains(neighbourTile))
-						distance[neighbourTile] = neighbourDistance;
-					else
-						distance.Add(neighbourTile, neighbourDistance);
-
+					distance.FindOrAdd(neighbourTile) = neighbourDistance;
 					neighbourTile.ParentTileRef = currentTile.TileRef;
 					neighbourTile.TotalCost = neighbourDistance;
 					PriorityQueue.Push(neighbourTile);
@@ -136,7 +140,9 @@ struct FIREEMBLEM_API FGenericPathfinder
 			}
 		}
 
-		for (auto& pair : distance)
+		PriorityQueue.Empty();
+
+		for (const auto& pair : distance)
 		{
 			if (pair.Value <= aFilter.GetMaxDistance())
 				outTilesInRange.Add(pair.Key);
@@ -184,7 +190,7 @@ struct FIREEMBLEM_API FGenericPathfinder
 	* Members
 	********/
 
-	const TGraph& Graph;
+	TGraph& Graph;
 
 	FPriorityQueue PriorityQueue;
 	FTileSorter TileSorter;

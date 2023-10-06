@@ -10,14 +10,6 @@
 
 class UBoxComponent;
 
-USTRUCT()
-struct FGridNestedIntArray
-{
-	GENERATED_BODY()
-
-	TArray<int> Values;
-};
-
 /* Spawns the grid and all grid based arrays. 
 * Holds the location on the grid of all actors and the walkability between tiles. 
 * Runs pathfinding, visibility and all other grid-based code. Holds many such functions that are generally called by other classes/blueprints. 
@@ -124,16 +116,34 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual int GetEdgeCostFromZDifference(const float& aStartZ, const float& aTargetZ) const;
 
-	/* Given a specific tile or index, try to find the neighbour tile along a specific direction. 
-	* This assume that there is a connection between the 2 tiles
-	* If the index is invalid, return false; otherwise return true
+	UFUNCTION(BlueprintCallable)
+	virtual bool TryGetNeighbourUsingDirection(const int32& aTileIndex, const int32& aDirection, FBaseTile& outTile) const;
+	virtual bool TryGetNeighbourUsingDirection(const FBaseTile& aTile, const int32& aDirection, FBaseTile& outTile) const;
+
+	/* Given a specific tile or index, try to find the neighbour tile along a specific direction.
+	* If the neighbourIndex isn't valid, or there isn't a connection between the 2 tiles, this will return false; true otherwise
 	*/
 	UFUNCTION(BlueprintCallable)
-	virtual bool GetNeighbourUsingDirection(const int32& aTileIndex, const int32& aDirection, FBaseTile& outNeighbourTile) const;
-	virtual bool GetNeighbourUsingDirection(const FBaseTile& aTile, const int32& aDirection, FBaseTile& outNeighbourTile) const;
+	virtual bool GetNeighbourUsingDirection_Safe(const int32& aTileIndex, const int32& aDirection, FBaseTile& outTile) const;
+	virtual bool GetNeighbourUsingDirection_Safe(const FBaseTile& aTile, const int32& aDirection, FBaseTile& outTile) const;
 
+	/* Given a specific tile or index, try to find the neighbour tile along a specific direction. 
+	* This assume that there is a connection between the 2 tiles
+	* This doesn't check for the index being valid (that's why called "unsafe")
+	*/
+	UFUNCTION(BlueprintCallable)
+	virtual FBaseTile& GetNeighbourUsingDirection_Unsafe(const int32& aTileIndex, const int32& aDirection);
+	virtual FBaseTile& GetNeighbourUsingDirection_Unsafe(const FBaseTile& aTile, const int32& aDirection);
+
+	/* Try to update the currently hovered tile depending on a camera location */
 	UFUNCTION(BlueprintCallable)
 	virtual void UpdateHoveredTile(const FVector& aCameraLocation);
+
+	/* Reset all tiles cost 
+	* And do we need to reset other stuff ?
+	*/
+	UFUNCTION(BlueprintCallable)
+	virtual void ResetAllTiles();
 
 
 	/********
@@ -260,33 +270,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual bool CreateSingleLevelLocations(const int32& aStartIndex, const FIntPoint& aGridSize, bool bShouldPrintOnFailure = true);
 
-	/* Create the vector grid for multiple level heights.
-	* This will depend on the Min/Max heights set
-	*/
-	UFUNCTION(BlueprintCallable)
-	virtual bool CreateMultiLevelLocations(const int32& aStartIndex, const FIntPoint& aGridSize, bool bShouldPrintOnFailure = true);
-
 	/* Generates all grid edges, determining what tiles can be moved between and the movement cost for each edge */
 	UFUNCTION(BlueprintCallable)
 	virtual void GenerateGridEdges();
-
-	/* If bUseSimpleCosts is true, adds the simple costs of all tiles to the GridSimpleCosts map.
-	* By default this map is checked by any units with a pathfinding type with "simple" in its name 
-	*/
-	UFUNCTION(BlueprintCallable)
-	virtual void GenerateSimpleCostMap();
-
-	/* At startup, generates a map of all grid tile locations. 
-	* Heightmap = false: flat grid
-	* Heightmap = One Level: Uses line traces to find highest points within defined boundries that blocks PathTrace
-	* Heightmap = multilevel: Keeps tracing after first hit, adding more levels to the locations map when found until outside MinHeight 
-	*/
-	UFUNCTION(BlueprintCallable)
-	virtual void CreateLocationsAndHeightmap(const int32& aGridIndex, const FVector& aLocation);
-
-	/* Creates an array that holds all levels stored at the different grid indexes for easy lookup */
-	UFUNCTION(BlueprintCallable)
-	virtual void UpdateHeightmapCache(const int32& aGridIndex);
 
 	/* Filles the BaseEdges array with the appropriate relative indexes of neighbor tiles */
 	UFUNCTION(BlueprintCallable)
@@ -299,15 +285,13 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void SetupEdgesUsingTerrain(bool bPrintOnError = true);
 
-	/* Adds edges from a tile to neighboring tiles for flat grids */
+	/* Adds edges for a tile to neighboring tiles for flat grids */
 	UFUNCTION(BlueprintCallable)
 	virtual void AddTileEdgesNoHeightmap(const int32& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError = true);
 
+	/* Add edges for a tile for grids using a single level */
 	UFUNCTION(BlueprintCallable)
 	virtual void AddTileEdgesOneLevelHeightmap(const int32& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError = true);
-
-	UFUNCTION(BlueprintCallable)
-	virtual void AddTileEdgesMultiLevelHeightmap(const int32& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError = true);
 
 
 	/********
@@ -355,9 +339,6 @@ private:
 
 	AGridManager();
 	~AGridManager();
-
-	/* Recursive function use for this CreateLocationsAndHeightmap */
-	void CreateLocationsAndHeightmap_Recursive(const int32& aGridIndex, FVector& aTraceStart, FVector& aTraceEnd, FVector& aLastHitPosition);
 
 
 protected:
@@ -545,10 +526,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config|Grid debug", meta = (EditCondition = "DebugDisplayPregeneratedGameplayGrids = true"))
 	bool DebugDisplayTileEdges;
 
-	/* This map will hold the level index for tile indexes */
-	UPROPERTY(VisibleAnywhere, Category = "Grid Arrays")
-	TMap<int, FGridNestedIntArray> HeightmapLevels;
-
 	/* Contains all the tiles of the grid */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid Arrays")
 	TArray<FBaseTile> GridTiles;
@@ -571,6 +548,10 @@ protected:
 	/* Default Tile color */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Tile Display")
 	FLinearColor DefaultTileColor;
+
+	/* Tile color when hovered */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Tile Display")
+	FLinearColor HoveredColor;
 
 private:
 

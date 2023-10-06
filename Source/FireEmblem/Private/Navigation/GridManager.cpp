@@ -247,7 +247,6 @@ void AGridManager::SetupHeightmapBox()
 
 
 	case EGridHeight::ONE_LEVEL:
-	case EGridHeight::MULTI_LEVEL:
 
 		location.Z = (MaxHeight + MinHeight) / 2;
 		scale.Z = (MaxHeight - MinHeight) / DefaultTileWidth;
@@ -379,10 +378,6 @@ bool AGridManager::CreateGridLocations(const int32& aStartIndex, const FIntPoint
 
 		return CreateSingleLevelLocations(aStartIndex, aGridSize, bShouldPrintOnFailure);
 
-	case EGridHeight::MULTI_LEVEL:
-
-		return CreateMultiLevelLocations(aStartIndex, aGridSize, bShouldPrintOnFailure);
-
 	case EGridHeight::GRIDHEIGHT_COUNT:
 	default:
 
@@ -446,49 +441,11 @@ bool AGridManager::CreateSingleLevelLocations(const int32& aStartIndex, const FI
 	return true;
 }
 
-bool AGridManager::CreateMultiLevelLocations(const int32& aStartIndex, const FIntPoint& aGridSize, bool bShouldPrintOnFailure /*= true*/)
-{
-	TArray<int32> tileIndexes = GetAllGridIndexesNaive(aStartIndex, aGridSize);
-
-	FVector location;
-
-	/* create the locations for the various heights possible (depends on the Max/min height and height between levels*/
-	for (auto tileIndex : tileIndexes)
-	{
-		location = ConvertTileIndexToLocationNaive(tileIndex);
-		location.Z = 0;
-		CreateLocationsAndHeightmap(tileIndex, location);
-	}
-
-	return true;
-}
-
 void AGridManager::GenerateGridEdges()
 {
 	SetupBaseEdges();
 
 	SetupEdgesUsingTerrain();
-}
-
-void AGridManager::GenerateSimpleCostMap()
-{
-}
-
-void AGridManager::CreateLocationsAndHeightmap(const int32& aGridIndex, const FVector& aLocation)
-{
-	FVector traceStart = ConvertGridLocationToWorld(aLocation.X, aLocation.Y, MaxHeight);
-	FVector traceEnd = ConvertGridLocationToWorld(aLocation.X, aLocation.Y, MinHeight);
-
-	FVector lastHitPosition(0, 0, -9999999);
-
-	/* call the recursive function with defaults trace start/end positions and setup the last hit position to "random" value */
-	CreateLocationsAndHeightmap_Recursive(aGridIndex, traceStart, traceEnd, lastHitPosition);
-}
-
-void AGridManager::UpdateHeightmapCache(const int32& aGridIndex)
-{
-	FGridNestedIntArray& nestedArray = HeightmapLevels.FindOrAdd(aGridIndex % IndexZ);
-	nestedArray.Values.Add(aGridIndex / IndexZ);
 }
 
 TArray<FIntPoint>& AGridManager::SetupBaseEdges()
@@ -537,19 +494,13 @@ void AGridManager::SetupEdgesUsingTerrain(bool bPrintOnError /*= true*/)
 				AddTileEdgesOneLevelHeightmap(anIndex, ShouldTraceForWalls);
 				break;
 
-			case EGridHeight::MULTI_LEVEL:
-				AddTileEdgesMultiLevelHeightmap(anIndex, ShouldTraceForWalls);
-				break;
-
 			default:
 				break;
 			}
 		};
 
-	int numIterations = (Heightmap != EGridHeight::MULTI_LEVEL) ? GridTiles.Num() : HeightmapLevels.Num();
-
 	/* iterate through the grid locations and add tile edges based on heightmap type */
-	for (int i = 0; i < numIterations; ++i)
+	for (int i = 0; i < GridTiles.Num(); ++i)
 	{
 		AddTileEdges(i);
 	}
@@ -606,21 +557,11 @@ void AGridManager::AddTileEdgesOneLevelHeightmap(const int32& aGridIndex, bool b
 	}
 }
 
-void AGridManager::AddTileEdgesMultiLevelHeightmap(const int32& aGridIndex, bool bShouldTraceForWalls, bool bPrintOnError)
-{	
-	/* get the tile we are looking edges for */
-	FBaseTile& currentTile = GetTileFromIndex(aGridIndex);
-
-	/* TBD */
-}
-
 void AGridManager::SetupGridArrays()
 {
 	CreateGridLocations(0, GridSize, Heightmap);
 
 	GenerateGridEdges();
-
-	GenerateSimpleCostMap();
 }
 
 void AGridManager::DebugPregenerateGameplayGrids()
@@ -694,48 +635,6 @@ void AGridManager::SpawnTileDebugText(const FBaseTile& aTile, const FString& aTe
 	UTextRenderComponent* textComp = Cast<UTextRenderComponent>(AddComponentByClass(UTextRenderComponent::StaticClass(), false, transform, false));
 	check(textComp);
 	textComp->SetText(FText::FromString(aText));
-}
-
-void AGridManager::CreateLocationsAndHeightmap_Recursive(const int32& aGridIndex, FVector& aTraceStart, FVector& aTraceEnd, FVector& aLastHitPosition)
-{
-	FHitResult hit;
-	ECollisionChannel collisionChannel = UEngineTypes::ConvertToCollisionChannel(PathTraceChannel);
-
-	/* if we hit something.. */
-	if (GetWorld()->LineTraceSingleByChannel(hit, aTraceStart, aTraceEnd, collisionChannel))
-	{
-		/* ... check first if it's in an acceptable range depending on the heigh between levels that is set */
-		float abs = FMath::Abs(aLastHitPosition.Z - hit.Location.Z);
-		aLastHitPosition = hit.Location;
-		if (abs >= HeightBetweenLevels)
-		{
-			/* ... then reset our trace positions */
-			aTraceStart = GetActorUpVector() * GetActorScale3D() + aLastHitPosition;
-			aTraceEnd = (GetActorUpVector() * GetActorScale3D() * HeightBetweenLevels) + aLastHitPosition;
-
-			/* try to find another hit */
-			if (!GetWorld()->LineTraceSingleByChannel(hit, aTraceStart, aTraceEnd, collisionChannel))
-			{
-				/* but if we don't find anything, set this location in our heightmap */
-				int idx = ConvertLocationToIndex3DNaive(aLastHitPosition);
-
-				FBaseTile& tile = GridTiles.AddDefaulted_GetRef();
-				tile.TileRef = idx;
-				tile.TileLocation = GetActorTransform().InverseTransformPosition(aLastHitPosition);
-
-				UpdateHeightmapCache(aGridIndex);
-
-				GridSizeZ = FMath::Max((idx / IndexZ) + 1, GridSizeZ);
-			}
-
-			/* if we can go lower, try it */
-			if (aLastHitPosition.Z >= (HeightBetweenLevels + MinHeight))
-			{
-				aTraceStart.Z = aLastHitPosition.Z - HeightBetweenLevels;
-				CreateLocationsAndHeightmap_Recursive(aGridIndex, aTraceStart, aTraceEnd, aLastHitPosition);
-			}
-		}
-	}
 }
 
 #pragma endregion
@@ -847,28 +746,52 @@ int AGridManager::GetEdgeCostFromZDifference(const float& aStartZ, const float& 
 	return -1;
 }
 
-bool AGridManager::GetNeighbourUsingDirection(const int32& aTileIndex, const int32& aDirection, FBaseTile& outNeighbourTile) const
+bool AGridManager::TryGetNeighbourUsingDirection(const int32& aTileIndex, const int32& aDirection, FBaseTile& outTile) const
+{
+	int32 x = GetXComponent(aTileIndex) + BaseEdgesDirection[aDirection].X;
+	int32 y = GetYComponent(aTileIndex) + BaseEdgesDirection[aDirection].Y;
+	if (!IsIndexValid(x, y))
+		return false;
+
+	outTile = GetTileFromIndex(x * GridSize.Y + y);
+	return true;
+}
+
+bool AGridManager::TryGetNeighbourUsingDirection(const FBaseTile& aTile, const int32& aDirection, FBaseTile& outTile) const
+{
+	return TryGetNeighbourUsingDirection(aTile.TileRef, aDirection, outTile);
+}
+
+bool AGridManager::GetNeighbourUsingDirection_Safe(const int32& aTileIndex, const int32& aDirection, FBaseTile& outTile) const
+{
+	return GetNeighbourUsingDirection_Safe(GetTileFromIndex(aTileIndex), aDirection, outTile);
+}
+
+bool AGridManager::GetNeighbourUsingDirection_Safe(const FBaseTile& aTile, const int32& aDirection, FBaseTile& outTile) const
+{
+	if (!aTile.HasValidEdgeAlongDirection(aDirection))
+		return false;
+
+	int32 x = GetXComponent(aTile.TileRef) + BaseEdgesDirection[aDirection].X;
+	int32 y = GetYComponent(aTile.TileRef) + BaseEdgesDirection[aDirection].Y;
+	if (!IsIndexValid(x, y))
+		return false;
+
+	outTile = GetTileFromIndex(x * GridSize.Y + y);
+	return true;
+}
+
+FBaseTile& AGridManager::GetNeighbourUsingDirection_Unsafe(const int32& aTileIndex, const int32& aDirection)
 {
 	int32 x = GetXComponent(aTileIndex) + BaseEdgesDirection[aDirection].X;
 	int32 y = GetYComponent(aTileIndex) + BaseEdgesDirection[aDirection].Y;
 
-	if (!IsIndexValid(x, y))
-		return false;
-
-	outNeighbourTile = GetTileFromIndex(x * GridSize.X + y);
-	return true;
+	return GetTileFromIndex(x * GridSize.Y + y);
 }
 
-bool AGridManager::GetNeighbourUsingDirection(const FBaseTile& aTile, const int32& aDirection, FBaseTile& outNeighbourTile) const
+FBaseTile& AGridManager::GetNeighbourUsingDirection_Unsafe(const FBaseTile& aTile, const int32& aDirection)
 {
-	int32 x = GetXComponent(aTile.TileRef) + BaseEdgesDirection[aDirection].X;
-	int32 y = GetYComponent(aTile.TileRef) + BaseEdgesDirection[aDirection].Y;
-
-	if (!IsIndexValid(x, y))
-		return false;
-
-	outNeighbourTile = GetTileFromIndex(x * GridSize.X + y);
-	return true;
+	return GetNeighbourUsingDirection_Unsafe(aTile.TileRef, aDirection);
 }
 
 void AGridManager::UpdateHoveredTile(const FVector& aCameraLocation)
@@ -877,7 +800,30 @@ void AGridManager::UpdateHoveredTile(const FVector& aCameraLocation)
 	if (!IsIndexValid(index))
 		return;
 
-	HoveredTileRef = index;
+	if (index != HoveredTileRef)
+	{
+		/* Hide the previously hovered tile */
+		DefaultTile->SetCustomDataValue(HoveredTileRef, 3, 0.f, true);
+		HoveredTileRef = index;
+
+		/* sets the newly hovered tile color */
+		DefaultTile->SetCustomDataValue(HoveredTileRef, 0, HoveredColor.R);
+		DefaultTile->SetCustomDataValue(HoveredTileRef, 1, HoveredColor.G);
+		DefaultTile->SetCustomDataValue(HoveredTileRef, 2, HoveredColor.B);
+		DefaultTile->SetCustomDataValue(HoveredTileRef, 3, 0.5f, true);
+	}
+}
+
+void AGridManager::ResetAllTiles()
+{
+	for (auto& tile : GridTiles)
+	{
+		tile.TotalCost = 0;
+		tile.ParentTileRef = 0;
+
+		if (HoveredTileRef != tile.TileRef)
+			DefaultTile->SetCustomDataValue(tile.TileRef, 3, 0.f, true);
+	}
 }
 
 const FVector AGridManager::GetDisplayTileLocationFromIndex(const int32& anIndex, const FIntPoint& aSize) const
@@ -924,16 +870,9 @@ int32 AGridManager::ConvertLocationToIndex3DNaive(const FVector& aLocation) cons
 
 	/* bunch of math stuff to get the closer index */
 
-	int32 x = FMath::Floor((transformedLocation.X + (TileSize.X / 2)) / TileSize.X) * GridSize.X;
-	int32 y = FMath::Floor((transformedLocation.Y + (TileSize.X / 2)) / TileSize.X);
+	int32 x = FMath::Floor((transformedLocation.X + (TileSize.X / 2)) / TileSize.Y);
+	int32 y = FMath::Floor((transformedLocation.Y + (TileSize.Y / 2)) / TileSize.Y) * GridSize.Y;
 	int32 index = x + y;
-
-	/* specific case of the multi level, as we need to take into account the z part of the location */
-	if (Heightmap == EGridHeight::MULTI_LEVEL)
-	{
-		int32 z = FMath::Floor((transformedLocation.Z + 0.01f - MinHeight) / HeightBetweenLevels) * IndexZ;
-		index += z;
-	}
 
 	return index;
 }

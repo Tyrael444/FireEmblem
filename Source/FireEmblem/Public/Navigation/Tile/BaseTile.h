@@ -14,7 +14,8 @@ struct FBaseTile
 {
 	GENERATED_BODY()
 
-	FBaseTile()
+	/* Simple constructor and destructor */
+	explicit FBaseTile()
 		: TileRef(-1), ParentTileRef(-1), IsTileOpen(false), IsTileClosed(false)
 	{
 	}
@@ -22,6 +23,7 @@ struct FBaseTile
 	~FBaseTile()
 	{
 	}
+
 
 	/********
 	* Utility
@@ -76,6 +78,10 @@ struct FBaseTile
 	/* Returns the number of neighbours this tile have */
 	const int32 GetNeighbourCount() const;
 	int32 GetNeighbourCount();
+
+	/* Returns all the directions of the neighbours of this tile */
+	const TArray<int32> GetNeighboursDirections() const;
+	TArray<int32> GetNeighboursDirections();
 
 	/* Simple operator to know if 2 tiles are equals, mostly used by the grid manager */
 	friend bool operator== (const FBaseTile& aLeft, const FBaseTile& aRight);
@@ -137,6 +143,7 @@ struct FBaseTile
 	uint8 IsTileClosed : 1;
 };
 
+/* This is added in order to have a basetile as tmap.key */
 FORCEINLINE uint32 GetTypeHash(const FBaseTile& MidiTime)
 {
 	uint32 Hash = FCrc::MemCrc32(&MidiTime, sizeof(FBaseTile));

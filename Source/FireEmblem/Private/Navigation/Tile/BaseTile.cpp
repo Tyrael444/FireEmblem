@@ -98,6 +98,20 @@ int32 FBaseTile::GetNeighbourCount()
 	return EdgesCosts.Num();
 }
 
+const TArray<int32> FBaseTile::GetNeighboursDirections() const
+{
+	TArray<int32> keys;
+	EdgesCosts.GetKeys(keys);
+	return keys;
+}
+
+TArray<int32> FBaseTile::GetNeighboursDirections()
+{
+	TArray<int32> keys;
+	EdgesCosts.GetKeys(keys);
+	return keys;
+}
+
 bool FBaseTile::operator==(const FBaseTile& anOther)
 {
 	return TileRef == anOther.TileRef;
