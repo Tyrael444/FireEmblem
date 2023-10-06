@@ -28,7 +28,13 @@ struct FGenericPathfinderQueryFilter
 		return MaxDistance;
 	}
 
+	bool ShouldIncludeStartTile() const
+	{
+		return bShouldIncludeStartTile;
+	}
+
 	int32 MaxDistance;
+	bool bShouldIncludeStartTile;
 };
 
 /**
@@ -104,8 +110,9 @@ struct FIREEMBLEM_API FGenericPathfinder
 			return;
 		}
 
-		/* Reset all tiles cost */
+		/* Reset all tiles cost and the priority queue */
 		Graph.ResetAllTiles();
+		PriorityQueue.Empty();
 
 		TMap<TSearchTile, int> distance;
 		distance.Add(aStartTile, 0);
@@ -139,8 +146,6 @@ struct FIREEMBLEM_API FGenericPathfinder
 				}
 			}
 		}
-
-		PriorityQueue.Empty();
 
 		for (const auto& pair : distance)
 		{
@@ -181,6 +186,64 @@ struct FIREEMBLEM_API FGenericPathfinder
 			return EGraphAStarResult::SEARCH_SUCCESS;
 
 		EGraphAStarResult result = EGraphAStarResult::SEARCH_SUCCESS;
+
+		/* Reset all tiles cost */
+		Graph.ResetAllTiles();
+
+		TMap<TSearchTile, int> distance;
+		distance.Add(aStartTile, 0);
+		PriorityQueue.Push(aStartTile);
+
+		/* simple dijkstra algo */
+		while (!PriorityQueue.IsEmpty())
+		{
+			TSearchTile currentTile = PriorityQueue.Pop();
+			/* no tiles should have no neighbours, they should have been removed from the grid earlier */
+			check(currentTile.GetNeighbourCount() > 0);
+
+			int currentDistance = currentTile.TotalCost;
+
+			/* avoid too long paths, just a safety */
+			if (currentDistance >= Policy::PathMaxLength)
+			{
+				result = EGraphAStarResult::INFINITE_LOOP;
+				break;
+			}
+
+			for (auto& direction : currentTile.GetNeighboursDirections())
+			{
+				int cost = currentTile.GetEdgeCostAlongDirection(direction);
+				int neighbourDistance = currentDistance + cost;
+
+				/* do we need to test for a valid neighbour ? */
+				TSearchTile& neighbourTile = Graph.GetNeighbourUsingDirection_Unsafe(currentTile.TileRef, direction);
+
+				if (!distance.Contains(neighbourTile) || neighbourDistance < distance[neighbourTile])
+				{
+					distance.FindOrAdd(neighbourTile) = neighbourDistance;
+					neighbourTile.ParentTileRef = currentTile.TileRef;
+					neighbourTile.TotalCost = neighbourDistance;
+					PriorityQueue.Push(neighbourTile);
+				}
+			}
+		}
+
+		/* check if the goal is reachable */
+		if (!distance.Contains(anEndTile))
+		{
+			return EGraphAStarResult::UNREACHABLE_GOAL;
+		}
+
+		/* reverse the path */
+		int parent = anEndTile.TileRef;
+		while (parent != -1)
+		{
+			if (parent == aStartTile.TileRef && !aFilter.ShouldIncludeStartTile())
+				break;
+
+			outPath.Add(Graph.GetTileFromIndex(parent));
+			parent = anEndTile.ParentTileRef;
+		}
 
 		return result;
 	}
